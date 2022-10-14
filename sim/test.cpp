@@ -18,31 +18,29 @@ extern cache_t **caches;
 test_args_t test_args;
 
 void init_test() {
-  switch(args.test) {
-  case 0:
-    test_args.addr_range = 1024;
-    break;
+    switch (args.test) {
+        case 0:
+            test_args.addr_range = 1024;
+            break;
 
-  default:
-    ERROR("don't recognize this test");
-  }
+        default: ERROR("don't recognize this test");
+    }
 }
 
 void finish_test() {
-  double hr;
+    double hr;
 
-  for (int i = 0; i < args.num_procs; ++i) {
-    switch(args.test) {
-    case 0:
-      hr = caches[i]->hit_rate();
-      if (!within_tolerance(hr, 0.5, 0.001)) {
-	ERROR("out of tolerance");
-      }
-      break;
-      
-    default: 
-      ERROR("don't recognize this test");
+    for (int i = 0; i < args.num_procs; ++i) {
+        switch (args.test) {
+            case 0:
+                hr = caches[i]->hit_rate();
+                if (!within_tolerance(hr, 0.5, 0.001)) {
+                    ERROR("out of tolerance");
+                }
+                break;
+
+            default: ERROR("don't recognize this test");
+        }
     }
-  }
-  printf("passed\n");
+    printf("passed\n");
 }

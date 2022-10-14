@@ -21,19 +21,25 @@ typedef unsigned int uint;
 
 typedef uint address_t;      // cannot be addr_t because cygwin defines
 typedef uint address_tag_t;
-typedef enum {INVALID, SHARED, EXCLUSIVE, MODIFIED} permit_tag_t;
-typedef enum {READ, WRITE, INVALIDATE} busop_t;
-typedef enum {REPLY = 0, REQUEST} pri_t;
+typedef enum {
+    INVALID, SHARED, EXCLUSIVE, MODIFIED
+} permit_tag_t;
+typedef enum {
+    READ, WRITE, INVALIDATE
+} busop_t;
+typedef enum {
+    REPLY = 0, REQUEST
+} pri_t;
 typedef int replacement_t;
 typedef int bus_tag_t;
 
 typedef int data_t[CACHE_LINE_SIZE];
 
 typedef struct {
-  int num_procs;
-  int num_cycles;
-  int test;
-  int verbose;
+    int num_procs;
+    int num_cycles;
+    int test;
+    int verbose;
 } args_t;
 
 extern args_t args;
@@ -41,28 +47,30 @@ extern args_t args;
 
 // forward declarations
 class iu_t;
+
 class cache_t;
+
 class network_t;
 
 typedef struct {
-  bool hit_p;
-  bool retry_p;
+    bool hit_p;
+    bool retry_p;
 } response_t;
 
 typedef struct {
-  busop_t busop;
-  address_t addr;
-  bus_tag_t tag;
-  permit_tag_t permit_tag;
-  data_t data;
+    busop_t busop;
+    address_t addr;
+    bus_tag_t tag;
+    permit_tag_t permit_tag;
+    data_t data;
 } proc_cmd_t;
 
 typedef struct {
-  bool valid_p;
-  int dest;
-  int src;
+    bool valid_p;
+    int dest;
+    int src;
 
-  proc_cmd_t proc_cmd;
+    proc_cmd_t proc_cmd;
 } net_cmd_t;
 
 extern int cur_cycle;

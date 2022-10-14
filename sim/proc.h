@@ -11,18 +11,21 @@
 
 // models a processor's ld/st stream
 class proc_t {
-  int proc;
-  response_t response;
+    int proc;
+    response_t response;
 
-  address_t addr;
-  bool ld_p;
+    address_t addr;
+    bool ld_p;
 
-  cache_t *cache;
+    cache_t *cache;
 
- public:
-  proc_t(int p);
-  void init();
-  void bind(cache_t *c);
-  void advance_one_cycle();
-  
+public:
+    proc_t(int p);
+
+    void init();
+
+    void bind(cache_t *c);
+
+    void advance_one_cycle();
+
 };

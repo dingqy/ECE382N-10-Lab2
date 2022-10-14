@@ -21,17 +21,17 @@
 
 
 proc_t::proc_t(int __p) {
-  proc = __p;
-  init();
+    proc = __p;
+    init();
 }
 
 void proc_t::init() {
-  response.retry_p = false;
-  ld_p = false;
+    response.retry_p = false;
+    ld_p = false;
 }
 
 void proc_t::bind(cache_t *c) {
-  cache = c;
+    cache = c;
 }
 
 
@@ -42,21 +42,20 @@ void proc_t::bind(cache_t *c) {
 // correctness and performance of your solution.
 
 void proc_t::advance_one_cycle() {
-  int data;
+    int data;
 
-  switch (args.test) {
-  case 0:
-    if (!response.retry_p) {
-      addr = random() % test_args.addr_range;
-      ld_p = ((random() % 2) == 0);
+    switch (args.test) {
+        case 0:
+            if (!response.retry_p) {
+                addr = random() % test_args.addr_range;
+                ld_p = ((random() % 2) == 0);
+            }
+            if (ld_p) response = cache->load(addr, 0, &data, response.retry_p);
+            else response = cache->store(addr, 0, cur_cycle, response.retry_p);
+            break;
+
+        default: ERROR("don't know this test case");
     }
-    if (ld_p) response = cache->load(addr, 0, &data, response.retry_p);
-    else      response = cache->store(addr, 0, cur_cycle, response.retry_p);
-    break;
-
-  default:
-    ERROR("don't know this test case");
-  }
 }
 
 

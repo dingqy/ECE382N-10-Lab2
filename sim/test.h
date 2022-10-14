@@ -3,10 +3,11 @@
 //     May 19, 2007
 
 void init_test();
+
 void finish_test();
 
 typedef struct {
-  int addr_range;
+    int addr_range;
 } test_args_t;
 
 

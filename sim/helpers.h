@@ -11,7 +11,9 @@
 const int LG_INTERLEAVE_SIZE = 8;
 
 int gen_node(address_t addr);
+
 int gen_local_addr(address_t addr);
+
 int gen_local_cache_line(address_t addr);
 
 bool within_tolerance(double, double, double);
