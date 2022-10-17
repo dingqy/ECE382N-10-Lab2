@@ -21,10 +21,24 @@ void terminate_on_error() {
     exit(1);
 }
 
+/**
+ * Get the node bits (log2 Nodes)
+ *
+ * @param addr
+ * @return
+ */
 int gen_node(address_t addr) {
     return ((addr >> LG_INTERLEAVE_SIZE) & gen_node_mask);
 }
 
+/**
+ * Get Local address
+ *
+ * Only zero the Node bits (log2 Nodes)
+ *
+ * @param addr Address
+ * @return Local address
+ */
 int gen_local_addr(address_t addr) {
     int top = (addr >> gen_local_addr_shift) << LG_INTERLEAVE_SIZE;
     int bottom = (addr & ((1 << LG_INTERLEAVE_SIZE) - 1));
@@ -32,6 +46,12 @@ int gen_local_addr(address_t addr) {
     return (top | bottom);
 }
 
+/**
+ * Get cache index (and tag)
+ *
+ * @param addr Global address
+ * @return Cache index/tag
+ */
 int gen_local_cache_line(address_t addr) {
     int laddr = gen_local_addr(addr);
 
@@ -49,7 +69,12 @@ void copy_cache_line(data_t dest, data_t src) {
     for (int i = 0; i < CACHE_LINE_SIZE; ++i) dest[i] = src[i];
 }
 
-
+/**
+ * round up (Log2X)
+ *
+ * @param x Value
+ * @return Log2X
+ */
 int lg(int x) {
     int r = 0;
 

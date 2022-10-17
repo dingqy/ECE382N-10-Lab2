@@ -19,17 +19,29 @@
 #include "proc.h"
 #include "test.h"
 
-
+/**
+ * Constructor of processor
+ *
+ * @param __p Processor ID
+ */
 proc_t::proc_t(int __p) {
     proc = __p;
     init();
 }
 
+/**
+ * Initialize the args in processor class
+ */
 void proc_t::init() {
     response.retry_p = false;
     ld_p = false;
 }
 
+/**
+ * Bind related cache
+ *
+ * @param c cache object
+ */
 void proc_t::bind(cache_t *c) {
     cache = c;
 }
@@ -41,9 +53,13 @@ void proc_t::bind(cache_t *c) {
 // you any more test cases than this.  You will be tested on the
 // correctness and performance of your solution.
 
+/**
+ * Simulate processor memory access behavior
+ */
 void proc_t::advance_one_cycle() {
     int data;
 
+    // TODO: ADD test behavior here
     switch (args.test) {
         case 0:
             if (!response.retry_p) {

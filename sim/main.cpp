@@ -10,8 +10,8 @@
 
 // STUDENTS: YOU ARE NOT ALLOWED TO MODIFY THIS FILE.  
 
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "helpers.h"
 #include "cache.h"
@@ -47,6 +47,18 @@ void advance_time() {
     ++cur_cycle;
 }
 
+/**
+ * Parser for command line args
+ *
+ * Arguments:
+ *  1. Number of processors
+ *  2. Number of simulation clock cycles
+ *  3. Test set index
+ *  4. Debug print
+ *
+ * @param argc Number of arguments
+ * @param argv Arguments
+ */
 void parse_args(int argc, char *argv[]) {
     if (argc != 5) {
         ERROR("usage: <number of processors> <num cycles> <test> <verbose>");

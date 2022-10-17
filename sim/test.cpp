@@ -17,6 +17,11 @@ extern cache_t **caches;
 
 test_args_t test_args;
 
+/**
+ * Initialize the test address range
+ *
+ * TODO: ADD test here
+ */
 void init_test() {
     switch (args.test) {
         case 0:
@@ -27,6 +32,11 @@ void init_test() {
     }
 }
 
+/**
+ * Deal with the performance of the test
+ *
+ * TODO: ADD test here
+ */
 void finish_test() {
     double hr;
 

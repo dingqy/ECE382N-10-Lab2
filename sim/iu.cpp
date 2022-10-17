@@ -12,7 +12,11 @@
 #include "cache.h"
 #include "iu.h"
 
-
+/**
+ * Initialize Intersection Unit with the node
+ *
+ * @param __node Node ID
+ */
 iu_t::iu_t(int __node) {
     node = __node;
     for (int i = 0; i < MEM_SIZE; ++i)
@@ -20,12 +24,23 @@ iu_t::iu_t(int __node) {
             mem[i][j] = 0;
 }
 
+/**
+ * Bind cache and network
+ *
+ * @param c Cache
+ * @param n Network
+ */
 void iu_t::bind(cache_t *c, network_t *n) {
     cache = c;
     net = n;
 }
 
-
+/**
+ * Simulate one cycle of Intersection Unit
+ *
+ * IU can only execute one request per cycle
+ * The priority is REPLY > REQUEST > PROC.
+ */
 void iu_t::advance_one_cycle() {
     // fixed priority: reply from network
     if (net->from_net_p(node, REPLY)) {
@@ -44,6 +59,12 @@ void iu_t::advance_one_cycle() {
 
 // this interface method only takes and buffers a request from the
 // processor.
+/**
+ * Register command from processor
+ *
+ * @param pc Processor command
+ * @return Boolean value for whether there is one command registered.
+ */
 bool iu_t::from_proc(proc_cmd_t pc) {
     if (!proc_cmd_p) {
         proc_cmd_p = true;
@@ -56,6 +77,19 @@ bool iu_t::from_proc(proc_cmd_t pc) {
     }
 }
 
+/**
+ * Deal with process request
+ *
+ * Two parts:
+ *  1. Local access
+ *      * Three operations: READ, Write, Invalidate
+ *      * local access is determined by getting the node from address
+ *  2. Global access
+ *      * Send request through network (to_net method)
+ *
+ * @param pc Processor command
+ * @return Success or not (???)
+ */
 bool iu_t::process_proc_request(proc_cmd_t pc) {
     int dest = gen_node(pc.addr);
     int lcl = gen_local_cache_line(pc.addr);
@@ -69,17 +103,19 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
         switch (pc.busop) {
             case READ:
+                // Read from memory
                 copy_cache_line(pc.data, mem[lcl]);
-
                 cache->reply(pc);
                 return (false);
 
             case WRITE:
+                // Write to memory
                 copy_cache_line(mem[lcl], pc.data);
                 return (false);
 
             case INVALIDATE:
                 // ***** FYTD *****
+                // TODO: Self-invalidation (Is it necessary to implement?)
                 return (false);  // need to return something for now
                 break;
         }
@@ -98,6 +134,12 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
 
 // receive a net request
+/**
+ * Process requests from network (Other nodes)
+ *
+ * @param net_cmd Network command
+ * @return Success or not
+ */
 bool iu_t::process_net_request(net_cmd_t net_cmd) {
     proc_cmd_t pc = net_cmd.proc_cmd;
 
@@ -125,10 +167,17 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
 
         case INVALIDATE:
             // ***** FYTD *****
+            // TODO: Invalidation from other nodes
             return (false);  // need to return something for now
     }
 }
 
+/**
+ * Process reply from network (Other nodes)
+ *
+ * @param net_cmd Network command
+ * @return Success or not
+ */
 bool iu_t::process_net_reply(net_cmd_t net_cmd) {
     proc_cmd_t pc = net_cmd.proc_cmd;
 
@@ -138,6 +187,7 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
 
     switch (pc.busop) {
         case READ: // assume local
+            // Deal with read request
             cache->reply(pc);
             return (false);
 

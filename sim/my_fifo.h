@@ -25,8 +25,19 @@ public:
 
     T edequeue();
 
+    /**
+     * Push the data and set its available time
+     *
+     * @param time
+     */
     void tenqueue(int time, T);
 
+    /**
+     * Pop the data only when current time is >= data available time
+     *
+     * @param time Current time
+     * @return data / empty
+     */
     T tdequeue(int time);
 
     // tdequeue(int *time) always dequeues, setting *time to be the time associated with the element dequeued
@@ -43,6 +54,11 @@ public:
 
     T front();
 
+    /**
+     * Test whether the FIFO has enough space
+     *
+     * @return Boolean value of testing
+     */
     bool space_p();
 
     int space();
@@ -51,6 +67,12 @@ public:
 
     bool empty();
 
+    /**
+     * Test whether the head of the queue is available
+     *
+     * @param time Current time
+     * @return Boolean value for testing
+     */
     bool tempty(int time);
 
     int size();
