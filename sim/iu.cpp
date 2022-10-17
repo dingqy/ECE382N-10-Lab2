@@ -185,6 +185,7 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
 
     proc_cmd_p = false; // clear out request that this reply is a reply to
 
+    // TODO: Maybe more reply operation?
     switch (pc.busop) {
         case READ: // assume local
             // Deal with read request
