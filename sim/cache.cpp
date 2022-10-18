@@ -423,6 +423,7 @@ void cache_t::reply(proc_cmd_t proc_cmd) {
 
     NOTE_ARGS(("%d: replacing addr_tag %d into set %d, assoc %d", node, car.address_tag, car.set, car.way));
 
+    // TODO: Write back replacement cache line
     car.permit_tag = proc_cmd.permit_tag;
     cache_fill(car, proc_cmd.data);
 
