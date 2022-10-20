@@ -107,7 +107,7 @@ bool iu_t::from_proc(proc_cmd_t pc) {
  *      * Local memory access
  *          - Copy the data into memory and update owner
  *      * Global memory access
- *          - send request through network (write request)
+ *          - send request through network (write request but need to downgrade the directory state)
  *          - For any incoming request to this cache line, response should be non-acknowledgement (It will not hit in the cache)
  *
  * @param pc Processor command
@@ -164,16 +164,20 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *  1. Read request (Not forwarded request)
  *      * This cache block is shared
  *          - Return the data in the memory and update sharer list
- *      * This cache block has owner
+ *      * This cache block has owner (modified)
  *          - If the owner is current node, access the cache to get the newest copy, downgrade the cache state, and update the owner in directory
  *          - If the owner is other nodes, forward the request to the owner
  *      * This cache block is Processing-modified
  *          - Return non-ack response
+ *          - TODO: Is it possible to have some MSHR to queue the request?
+ *      * This cache block has owner (exclusive)
+ *          - If the owner is current node, respond with data, downgrade the cache state, and update the owner in directory
+ *          - If the owner is other nodes, respond with data and forward the request to the owner (no ack read request)
  *
  *  2. Read request (forwarded request)
  *      * Access the cache
  *          - If cache miss, return non-ack response
- *          - If cache hit, return data directly
+ *          - If cache hit and need ack, return data directly to directory and destination (Downgrade to shared or invalid)
  *
  *  3. Write request (Ownership)
  *      * This cache block is shared
@@ -185,6 +189,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *          - If the owner is other nodes, send invalidate request, change to Processing-modified state, and wait for ack response
  *      * This cache block is Processing-modified
  *          - Return non-ack response
+ *          - TODO: Is it possible to have some MSHR to queue the request?
  *
  *  4. Invalidation request
  *      * No directory access
