@@ -173,6 +173,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *      * This cache block has owner (exclusive)
  *          - If the owner is current node, respond with data, downgrade the cache state, and update the owner in directory
  *          - If the owner is other nodes, respond with data and forward the request to the owner (no ack read request)
+ *      * This cache block is Processing-invalid
+ *          - return non-ack response
  *
  *  2. Read request (forwarded request)
  *      * Access the cache
@@ -190,6 +192,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *      * This cache block is Processing-modified
  *          - Return non-ack response
  *          - TODO: Is it possible to have some MSHR to queue the request?
+ *      * This cache block is Processing-invalid
+ *          - Changing to processing-modified state and return data directly
  *
  *  4. Invalidation request
  *      * No directory access
