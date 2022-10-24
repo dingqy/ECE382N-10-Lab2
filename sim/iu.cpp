@@ -164,24 +164,29 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *  1. Read request (Not forwarded request)
  *      * This cache block is shared
  *          - Return the data in the memory and update sharer list
+ *      * This cache block is shared-no-data
+ *          - Forward the request to the owner
  *      * This cache block has owner (modified)
  *          - If the owner is current node, access the cache to get the newest copy, downgrade the cache state, and update the owner in directory
  *          - If the owner is other nodes, forward the request to the owner
  *      * This cache block is Processing-modified
- *          - Return non-ack response
+ *          - Change to Processing-shared-no-data state and forward the request to the owner
  *          - TODO: Is it possible to have some MSHR to queue the request?
- *      * This cache block has owner (exclusive)
- *          - If the owner is current node, respond with data, downgrade the cache state, and update the owner in directory
- *          - If the owner is other nodes, respond with data and forward the request to the owner (no ack read request)
  *      * This cache block is Processing-invalid
- *          - return non-ack response
+ *          - Return non-ack response
+ *      * This cache block is Processing-shared-no-data
+ *          - Forward the request to the owner
+ *      * This cache block is Processing-shared
+ *          - Return the data and update sharer list
+ *      * This cache block is Invalid
+ *          - Change state to modified state, setup owner, and return data with exclusive
  *
  *  2. Read request (forwarded request)
  *      * Access the cache
  *          - If cache miss, return non-ack response
- *          - If cache hit and need ack, return data directly to directory and destination (Downgrade to shared or invalid)
+ *          - If cache hit and need ack, return data directly to directory and destination (Downgrade to shared)
  *
- *  3. Write request (Ownership)
+ *  3. Write request (Not forwarded request)
  *      * This cache block is shared
  *          - Change the block to be Processing-modified state
  *          - Send invalidation requests until all the sharers acknowledge
@@ -190,12 +195,26 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *          - If the owner is current node, invalidate the owner and return ack response
  *          - If the owner is other nodes, send invalidate request, change to Processing-modified state, and wait for ack response
  *      * This cache block is Processing-modified
- *          - Return non-ack response
+ *          - If the sender is not the owner, return non-ack response
+ *          - If the sender is the owner, change state to Processing-invalid state and write the data
  *          - TODO: Is it possible to have some MSHR to queue the request?
  *      * This cache block is Processing-invalid
  *          - Changing to processing-modified state and return data directly
+ *      * This cache block is Processing-shared
+ *          - Return non-ack response
+ *      * This cache block is Processing-shared-no-data
+ *          - Return non-ack response
+ *      * This cache block is shared-no-data
+ *          - Return non-ack response
+ *      * This cache block is Invalid
+ *          - Change state to modified state, setup owner, and return data with exclusive
  *
- *  4. Invalidation request
+ *  4. Write request (forwarded request)
+ *      * Access the cache
+ *          - If cache miss, return non-ack response
+ *          - If cache hit and need ack, return data directly to directory and destination (Downgrade to Invalid)
+ *
+ *  5. Invalidation request
  *      * No directory access
  *      * Modify cache state and return ack response
  *
@@ -211,6 +230,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
 
     // ***** FYTD *****
     // sanity check
+    // TODO: Forward request don't need this line
     if (gen_node(pc.addr) != node) ERROR("sent to wrong home site!");
 
     switch (pc.busop) {
@@ -243,17 +263,21 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
  * Network request (Based on different bus tag)
  *  1. Invalidation request ack
  *      * Update sharer list and reduce the counter by 1
- *  2. Read request ack
+ *  2. Read request ack (Not forwarded request)
  *      * Fill cache (may trigger replacement write back)
  *      * End the processor command processing signal
  *  3. Invalidation request non-ack
  *      * Retry
- *  4. Write request ack
+ *  4. Write request ack (Not forwarded request)
  *      * End the processor command processing signal
  *  5. Read request non-ack
  *      * Retry
  *  6. Write request non-ack
  *      * Retry
+ *  7. Write request ack (forwarded request)
+ *      * Fill memory
+ *  8. Read request ack (forwarded request)
+ *      * Fill memory
  *
  * @param net_cmd Network command
  * @return Success or not
