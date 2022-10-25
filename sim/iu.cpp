@@ -103,12 +103,16 @@ bool iu_t::from_proc(proc_cmd_t pc) {
  *          - If it is the only copy, setup owner
  *      * Global memory access
  *          - send request through network (write request)
- *  3. Replacement write back (modified state)
+ *  3. Replacement write back (modified/exclusive state)
  *      * Local memory access
- *          - Copy the data into memory and update owner
+ *          - Copy the data into memory and change directory state to be Invalid
  *      * Global memory access
  *          - send request through network (write request but need to downgrade the directory state)
- *          - For any incoming request to this cache line, response should be non-acknowledgement (It will not hit in the cache)
+ *  4. Replacement write back (shared state)
+ *      * Local memory access
+ *          - Update sharer list
+ *      * Global memory access
+ *          - send request through network (write request but need to downgrade the directory state)
  *
  * @param pc Processor command
  * @return Success or not (???)
@@ -162,61 +166,46 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *
  * Network request
  *  1. Read request (Not forwarded request)
- *      * This cache block is shared
+ *      * This cache block is Shared
  *          - Return the data in the memory and update sharer list
- *      * This cache block is shared-no-data
- *          - Forward the request to the owner
- *      * This cache block has owner (modified)
- *          - If the owner is current node, access the cache to get the newest copy, downgrade the cache state, and update the owner in directory
- *          - If the owner is other nodes, forward the request to the owner
- *      * This cache block is Processing-modified
- *          - Change to Processing-shared-no-data state and forward the request to the owner
- *          - TODO: Is it possible to have some MSHR to queue the request?
- *      * This cache block is Processing-invalid
+ *      * This cache block is Shared-no-data
  *          - Return non-ack response
- *      * This cache block is Processing-shared-no-data
- *          - Forward the request to the owner
- *      * This cache block is Processing-shared
- *          - Return the data and update sharer list
+ *      * This cache block is Modified
+ *          - If the owner is current node, access the cache to get the newest copy, downgrade the cache state,
+ *            change the directory state to be Shared, and update sharer list.
+ *          - If the owner is other nodes, change state to be Shared-no-data, and forward the request to the owner
  *      * This cache block is Invalid
  *          - Change state to modified state, setup owner, and return data with exclusive
  *
  *  2. Read request (forwarded request)
  *      * Access the cache
- *          - If cache miss, return non-ack response
- *          - If cache hit and need ack, return data directly to directory and destination (Downgrade to shared)
+ *          - If cache miss, resubmit the request to the directory node
+ *          - If cache hit, return data directly to directory (Update sharer list) and destination (Downgrade to shared)
  *
  *  3. Write request (Not forwarded request)
- *      * This cache block is shared
- *          - Change the block to be Processing-modified state
- *          - Send invalidation requests until all the sharers acknowledge
- *          - Send acknowledge back to source node
- *      * This cache block has owner
- *          - If the owner is current node, invalidate the owner and return ack response
- *          - If the owner is other nodes, send invalidate request, change to Processing-modified state, and wait for ack response
- *      * This cache block is Processing-modified
- *          - If the sender is not the owner, return non-ack response
- *          - If the sender is the owner, change state to Processing-invalid state and write the data
- *          - TODO: Is it possible to have some MSHR to queue the request?
- *      * This cache block is Processing-invalid
- *          - Changing to processing-modified state and return data directly
- *      * This cache block is Processing-shared
- *          - Return non-ack response
- *      * This cache block is Processing-shared-no-data
- *          - Return non-ack response
- *      * This cache block is shared-no-data
+ *      * This cache block is Shared
+ *          - If the permitted tag is Modified:
+ *              - Change the block to be Modified state
+ *              - Send invalidation requests until all the sharers acknowledge (Push requests into the queue)
+ *              - Send acknowledge back to source node
+ *          - If the permitted tag is Shared:
+ *              - Update sharer list (Change 1 to 0)
+ *      * This cache block is Modified
+ *          - If the owner is request node, write data (Exclusive do not need this), and change state to be Invalid
+ *          - If the owner is other nodes, forward request to the owner
+ *      * This cache block is Shared-no-data
  *          - Return non-ack response
  *      * This cache block is Invalid
  *          - Change state to modified state, setup owner, and return data with exclusive
  *
  *  4. Write request (forwarded request)
  *      * Access the cache
- *          - If cache miss, return non-ack response
- *          - If cache hit and need ack, return data directly to directory and destination (Downgrade to Invalid)
+ *          - If cache miss, resubmit the request to the directory node
+ *          - If cache hit, return data directly to destination (Downgrade to Invalid) and send ack to directory
  *
  *  5. Invalidation request
  *      * No directory access
- *      * Modify cache state and return ack response
+ *      * Modify cache state and return ack response (No matter whether it hit or not)
  *
  * @param net_cmd Network command
  * @return Success or not
@@ -262,22 +251,24 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
  *
  * Network request (Based on different bus tag)
  *  1. Invalidation request ack
- *      * Update sharer list and reduce the counter by 1
+ *      * Update sharer list (1 -> 0)
  *  2. Read request ack (Not forwarded request)
  *      * Fill cache (may trigger replacement write back)
  *      * End the processor command processing signal
- *  3. Invalidation request non-ack
+ *  3. Invalidation request non-ack (Impossible)
  *      * Retry
  *  4. Write request ack (Not forwarded request)
+ *      * Fill cache (may trigger replacement write back)
  *      * End the processor command processing signal
  *  5. Read request non-ack
  *      * Retry
  *  6. Write request non-ack
  *      * Retry
  *  7. Write request ack (forwarded request)
- *      * Fill memory
+ *      * Update owner id
  *  8. Read request ack (forwarded request)
  *      * Fill memory
+ *      * Change state from Shared-no-data to Shared and update sharer list
  *
  * @param net_cmd Network command
  * @return Success or not
