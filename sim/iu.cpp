@@ -40,6 +40,8 @@ void iu_t::bind(cache_t *c, network_t *n) {
  *
  * IU can only execute one request per cycle
  * The priority is REPLY > REQUEST > PROC.
+ *
+ * TODO: New priority: REPLY > SEND_REQ > REQUEST > SEND_INVALIDATE > PROC
  */
 void iu_t::advance_one_cycle() {
     // fixed priority: reply from network
@@ -187,6 +189,9 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *          - If the permitted tag is Modified:
  *              - Change the block to be Modified state
  *              - Send invalidation requests until all the sharers acknowledge (Push requests into the queue)
+ *                  + TODO: If invalidation queue is not enough, What should do to avoid deadlock?
+ *                          One possible solution is add one internal request queue and buffer temporarily
+ *                          If the buffer is full, and invalidation queue is still not enough, non-ack response is sent
  *              - Send acknowledge back to source node
  *          - If the permitted tag is Shared:
  *              - Update sharer list (Change 1 to 0)
