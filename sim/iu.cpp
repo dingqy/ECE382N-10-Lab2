@@ -190,7 +190,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *              - Change the block to be Modified state
  *              - Send invalidation requests until all the sharers acknowledge (Push requests into the queue)
  *                  + TODO: If invalidation queue is not enough, What should do to avoid deadlock?
- *                          One possible solution is add one internal request queue and buffer temporarily
+ *                          One possible solution is add one internal request queue and buffer the request temporarily
  *                          If the buffer is full, and invalidation queue is still not enough, non-ack response is sent
  *              - Send acknowledge back to source node
  *          - If the permitted tag is Shared:
@@ -211,6 +211,9 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *  5. Invalidation request
  *      * No directory access
  *      * Modify cache state and return ack response (No matter whether it hit or not)
+ *
+ *  TODO: How does internal queue look like? (One possible solution is to have invalidate queue and send-request queue separately,
+ *        but the priority is important to consider)
  *
  * @param net_cmd Network command
  * @return Success or not
