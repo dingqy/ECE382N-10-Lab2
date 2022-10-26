@@ -171,7 +171,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *      * This cache block is Shared
  *          - Return the data in the memory and update sharer list
  *      * This cache block is Shared-no-data
- *          - Return non-ack response
+ *          - Forward request to the owner
  *      * This cache block is Modified
  *          - If the owner is current node, access the cache to get the newest copy, downgrade the cache state,
  *            change the directory state to be Shared, and update sharer list.
@@ -182,22 +182,26 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *  2. Read request (forwarded request)
  *      * Access the cache
  *          - If cache miss, resubmit the request to the directory node
- *          - If cache hit, return data directly to directory (Update sharer list) and destination (Downgrade to shared)
+ *          - If cache hit
+ *              + If cache block is modified, return data directly to directory (Update sharer list) and destination (Downgrade to shared)
+ *              + If cache block is shared, return data to the destination
  *
  *  3. Write request (Not forwarded request)
  *      * This cache block is Shared
  *          - If the permitted tag is Modified:
- *              - Change the block to be Modified state
- *              - Send invalidation requests until all the sharers acknowledge (Push requests into the queue)
- *                  + TODO: If invalidation queue is not enough, What should do to avoid deadlock?
- *                          One possible solution is add one internal request queue and buffer the request temporarily
- *                          If the buffer is full, and invalidation queue is still not enough, non-ack response is sent
- *              - Send acknowledge back to source node
+ *              + Change the block to be Modified state
+ *              + Send invalidation requests until all the sharers acknowledge (Push requests into the queue)
+ *                  TODO: If invalidation queue is not enough, What should do to avoid deadlock?
+ *                        One possible solution is add one internal request queue and buffer the request temporarily
+ *                        If the buffer is full, and invalidation queue is still not enough, non-ack response is sent
+ *              + Send acknowledge back to source node
  *          - If the permitted tag is Shared:
- *              - Update sharer list (Change 1 to 0)
+ *              + Update sharer list (Change 1 to 0)
  *      * This cache block is Modified
  *          - If the owner is request node, write data (Exclusive do not need this), and change state to be Invalid
- *          - If the owner is other nodes, forward request to the owner
+ *          - If the owner is other nodes
+ *              + If there are sharers, return non-ack response
+ *              + If there aren't sharers, forward the request to the owner
  *      * This cache block is Shared-no-data
  *          - Return non-ack response
  *      * This cache block is Invalid
