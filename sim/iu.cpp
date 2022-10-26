@@ -183,7 +183,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *      * Access the cache
  *          - If cache miss, resubmit the request to the directory node
  *          - If cache hit
- *              + If cache block is modified, return data directly to directory (Update sharer list) and destination (Downgrade to shared)
+ *              + If cache block is modified/exclusive, return data directly to directory (Update sharer list) and destination (Downgrade to shared)
  *              + If cache block is shared, return data to the destination
  *
  *  3. Write request (Not forwarded request)
