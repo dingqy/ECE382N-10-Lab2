@@ -41,7 +41,7 @@ void iu_t::bind(cache_t *c, network_t *n) {
  * IU can only execute one request per cycle
  * The priority is REPLY > REQUEST > PROC.
  *
- * TODO: New priority: REPLY > SEND_REQ > REQUEST > SEND_INVALIDATE > PROC
+ * TODO: New priority: REPLY > FORWARD > SEND_REPLY > SEND_FORWARD > REQUEST > PROC
  */
 void iu_t::advance_one_cycle() {
     // fixed priority: reply from network
@@ -110,6 +110,7 @@ bool iu_t::from_proc(proc_cmd_t pc) {
  *          - Copy the data into memory and change directory state to be Invalid
  *      * Global memory access
  *          - send request through network (write request but need to downgrade the directory state)
+ *          - Buffer the data into victim buffer
  *  4. Replacement write back (shared state)
  *      * Local memory access
  *          - Update sharer list
@@ -181,17 +182,19 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *
  *  2. Read request (forwarded request)
  *      * Access the cache
- *          - If cache miss, resubmit the request to the directory node
+ *          - If cache miss,
+ *              + If it is in victim buffer, return data to the source
+ *              + else, return non-ack response to the source
  *          - If cache hit
- *              + If cache block is modified/exclusive, return data directly to directory (Update sharer list) and destination (Downgrade to shared)
- *              + If cache block is shared, return data to the destination
+ *              + If cache block is modified/exclusive, return data directly to directory (Update sharer list) and source (Downgrade to shared)
+ *              + If cache block is shared, return data to the source
  *
  *  3. Write request (Not forwarded request)
  *      * This cache block is Shared
  *          - If the permitted tag is Modified:
  *              + Change the block to be Modified state
  *              + Send invalidation requests until all the sharers acknowledge (Push requests into the queue)
- *                  TODO: If invalidation queue is not enough, What should do to avoid deadlock?
+ *                  TODO: If request queue is not enough, What should do to avoid deadlock?
  *                        One possible solution is add one internal request queue and buffer the request temporarily
  *                        If the buffer is full, and invalidation queue is still not enough, non-ack response is sent
  *              + Send acknowledge back to source node
@@ -199,8 +202,11 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *              + Update sharer list (Change 1 to 0)
  *      * This cache block is Modified
  *          - If the owner is request node, write data (Exclusive do not need this), and change state to be Invalid
+ *              + Return ack to the requestor
  *          - If the owner is other nodes
- *              + If there are sharers, return non-ack response
+ *              + If there are sharers
+ *                  # If the requestor is one of sharers, return non-ack response
+ *                  # If the requestor is not one of sharers, forward the request to the owner
  *              + If there aren't sharers, forward the request to the owner
  *      * This cache block is Shared-no-data
  *          - Return non-ack response
@@ -209,15 +215,16 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *
  *  4. Write request (forwarded request)
  *      * Access the cache
- *          - If cache miss, resubmit the request to the directory node
- *          - If cache hit, return data directly to destination (Downgrade to Invalid) and send ack to directory
+ *          - If cache miss,
+ *              + If it is in victim buffer, return data to the source
+ *              + else, return non-ack response to the source
+ *          - If cache hit, return data directly to the source (Downgrade to Invalid) and send ack to directory
  *
  *  5. Invalidation request
  *      * No directory access
  *      * Modify cache state and return ack response (No matter whether it hit or not)
  *
- *  TODO: How does internal queue look like? (One possible solution is to have invalidate queue and send-request queue separately,
- *        but the priority is important to consider)
+ *  TODO: New queue on network (Forward Queue) / New internal queue (Send-Forward Queue and Send-reply Queue)
  *
  * @param net_cmd Network command
  * @return Success or not
@@ -270,12 +277,15 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
  *  3. Invalidation request non-ack (Impossible)
  *      * Retry
  *  4. Write request ack (Not forwarded request)
- *      * Fill cache (may trigger replacement write back)
- *      * End the processor command processing signal
+ *      * Write back
+ *          - Evict the victim
+ *      * Not Write back
+ *          - Fill cache (may trigger replacement write back)
+ *          - End the processor command processing signal
  *  5. Read request non-ack
- *      * Retry
+ *      * Retry (Need proc do again)
  *  6. Write request non-ack
- *      * Retry
+ *      * Retry (Need proc do again)
  *  7. Write request ack (forwarded request)
  *      * Update owner id
  *  8. Read request ack (forwarded request)
