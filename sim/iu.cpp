@@ -163,7 +163,6 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
                     cache->reply(pc);
                     proc_cmd_p = false; // clear proc_cmd
-
                 } else if (dir[lcl].state == DIR_OWNED) {
                     // If it is owned by other nodes, it needs to generate a net_cmd and forward the proc_cmd
                     if (dir[lcl].owner == node) {
@@ -197,7 +196,6 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
                     cache->reply(pc);
                     proc_cmd_p = false; // clear proc_cmd
-
                 } else if (dir[lcl].state == DIR_SHARED) {
                     // If it is shared with other nodes, send invalidates to all sharers
 
@@ -228,7 +226,6 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     // dir state won't be updated to OWNED for now
                     // the requestor won't be the owner for now 
                     // no cache reply for now 
-
                 } else if (dir[lcl].state == DIR_OWNED) {
                     // If it is owned by other nodes, generate network request to invalidate the old owner
                     // get the newest copy, and update owner
@@ -284,6 +281,9 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
         net_cmd.src = node;
         net_cmd.dest = dest;
         net_cmd.proc_cmd = pc;
+                
+        to_net_req_q.push(net_cmd); 
+        // enqueue to the local to_net_req_q rather than directly send to the network 
 
         to_net_req_q.push(net_cmd);
         // enqueue to the local to_net_req_q rather than directly send to the network 
