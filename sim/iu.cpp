@@ -41,7 +41,7 @@ void iu_t::bind(cache_t *c, network_t *n) {
  * IU can only execute one request per cycle
  * The priority is REPLY > REQUEST > PROC.
  *
- * TODO: New priority: REPLY > FORWARD > SEND_REPLY > SEND_FORWARD > REQUEST > PROC
+ * TODO: New priority: REPLY > WRITEBACK > FORWARD > REQUEST > PROC; SEND_REPLY > SEND_FORWARD
  */
 void iu_t::advance_one_cycle() {
     // fixed priority: reply from network
