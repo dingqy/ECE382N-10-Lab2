@@ -44,6 +44,15 @@ typedef struct {
 
 extern args_t args;
 
+typedef enum {
+    DIR_INVALID, DIR_SHARED, DIR_OWNED
+} dir_state_t;
+
+typedef struct {
+    dir_state_t state;
+    int owner;
+    uint shared_nodes;
+} dir_t;
 
 // forward declarations
 class iu_t;

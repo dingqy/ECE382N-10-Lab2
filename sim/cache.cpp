@@ -213,11 +213,12 @@ void cache_t::write_data(address_t addr, cache_access_response_t car, int data) 
     tags[car.set][car.way].data[offset] = data;
 }
 
-cache_access_response_t cache_t::lru_replacement(address_t addr) {
+cache_access_response_t cache_t::lru_replacement(address_t addr, bool& replaced) {
     cache_access_response_t car;
 
     // already in the cache?
     if (cache_access(addr, INVALID, &car)) {
+        replaced = 0;
         return (car);
     }
 
@@ -232,13 +233,14 @@ cache_access_response_t cache_t::lru_replacement(address_t addr) {
     for (int a = 0; a < assoc; ++a) {
         if (tags[set][a].replacement == -1) {
             car.way = a;
+            replaced = 0;   
             return (car);
         } else if (tags[set][a].replacement == 0) {
             done_p = true;
             car.way = a;
         }
     }
-
+    replaced = 1; 
     if (done_p) return (car);
 
     ERROR("should be a way that is LRU");
@@ -419,11 +421,18 @@ response_t cache_t::store(address_t addr, bus_tag_t tag, int data, bool retried_
 void cache_t::reply(proc_cmd_t proc_cmd) {
     // fill cache, return to processor
 
-    cache_access_response_t car = lru_replacement(proc_cmd.addr);
+    bool replaced_wb = 0;
+    cache_access_response_t car = lru_replacement(proc_cmd.addr, replaced_wb);
 
     NOTE_ARGS(("%d: replacing addr_tag %d into set %d, assoc %d", node, car.address_tag, car.set, car.way));
 
     // TODO: Write back replacement cache line
+    if (replaced_wb) {
+        uint replaced_addr = ((tags[car.set][car.way].address_tag) << address_tag_shift) | (car.set << set_shift);
+        proc_cmd_t proc_cmd = (proc_cmd_t) {INVALIDATE, replaced_addr, 0xFFFF, car.permit_tag};
+        iu->from_proc(proc_cmd);
+    }
+
     car.permit_tag = proc_cmd.permit_tag;
     cache_fill(car, proc_cmd.data);
 

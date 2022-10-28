@@ -13,6 +13,7 @@
 #include "my_fifo.h"
 #include "cache.h"
 #include "network.h"
+#include <queue>
 
 class iu_t {
     int node;
@@ -20,7 +21,7 @@ class iu_t {
     int local_accesses;
     int global_accesses;
 
-    data_t mem[MEM_SIZE];
+    data_t mem[MEM_SIZE];   // 64B x 1024
 
     cache_t *cache;
     network_t *net;
@@ -37,6 +38,13 @@ class iu_t {
     bool process_net_request(net_cmd_t net_cmd);
 
     bool process_net_reply(net_cmd_t net_cmd);
+
+    // directory
+    dir_t dir[MEM_SIZE];
+
+    // queue: node -> network
+    my_fifo_t <net_cmd_t> to_net_req_q;
+    
 
 public:
     iu_t(int __node);
