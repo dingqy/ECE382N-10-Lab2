@@ -459,3 +459,7 @@ void iu_t::print_stats() {
     printf("num local  accesses = %d\n", local_accesses);
     printf("num global accesses = %d\n", global_accesses);
 }
+
+dir_t iu_t::get_dir_entry(int index) {
+    return dir[index];
+}

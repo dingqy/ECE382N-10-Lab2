@@ -43,8 +43,8 @@ class iu_t {
     dir_t dir[MEM_SIZE];
 
     // queue: node -> network
-    my_fifo_t <net_cmd_t> to_net_req_q;
-    
+    my_fifo_t<net_cmd_t> to_net_req_q;
+
 
 public:
     iu_t(int __node);
@@ -60,6 +60,10 @@ public:
 
     // network side
     bool from_net(net_cmd_t nc);
+
+    // debug directory
+    // TODO: Function for tests
+    dir_t get_dir_entry(int index);
 
 };
 
