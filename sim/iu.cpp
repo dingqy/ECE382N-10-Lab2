@@ -148,12 +148,12 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     dir[lcl].shared_nodes = (1 << node);
                     dir[lcl].owner = node;
 
-                copy_cache_line(pc.data, mem[lcl]);
+                    copy_cache_line(pc.data, mem[lcl]);
                     pc.permit_tag = EXCLUSIVE;
 
-                cache->reply(pc);
+                    cache->reply(pc);
                     proc_cmd_p = false; // clear proc_cmd
-       
+
                 } else if (dir[lcl].state == DIR_SHARED) {
                     // If it is shared with other nodes, update sharer list
                     dir[lcl].shared_nodes |= (1 << node);
@@ -163,7 +163,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
                     cache->reply(pc);
                     proc_cmd_p = false; // clear proc_cmd
-                
+
                 } else if (dir[lcl].state == DIR_OWNED) {
                     // If it is owned by other nodes, it needs to generate a net_cmd and forward the proc_cmd
                     if (dir[lcl].owner == node) {
@@ -173,12 +173,12 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     net_cmd_t net_cmd;
                     net_cmd.src = node;
                     net_cmd.dest = dir[lcl].owner;
-                    net_cmd.proc_cmd = pc;  
+                    net_cmd.proc_cmd = pc;
 
                     bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
                     if (enqueue_status) {
                         proc_cmd_p = false; // clear proc_cmd if successfully enqueued
-                    } 
+                    }
                     // no cache reply for now
                     // owner won't be changed for now
 
@@ -197,7 +197,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
                     cache->reply(pc);
                     proc_cmd_p = false; // clear proc_cmd
-       
+
                 } else if (dir[lcl].state == DIR_SHARED) {
                     // If it is shared with other nodes, send invalidates to all sharers
 
@@ -214,9 +214,9 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                                 net_cmd_t net_cmd;
                                 net_cmd.src = node;
                                 net_cmd.dest = i_node;
-                                net_cmd.proc_cmd = pc;  
+                                net_cmd.proc_cmd = pc;
 
-                                to_net_req_q.push(net_cmd); 
+                                to_net_req_q.push(net_cmd);
                                 // enqueue to the local to_net_req_q rather than directly send to the network                             
                             }
                         }
@@ -228,7 +228,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     // dir state won't be updated to OWNED for now
                     // the requestor won't be the owner for now 
                     // no cache reply for now 
-                
+
                 } else if (dir[lcl].state == DIR_OWNED) {
                     // If it is owned by other nodes, generate network request to invalidate the old owner
                     // get the newest copy, and update owner
@@ -239,11 +239,11 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     net_cmd_t net_cmd;
                     net_cmd.src = node;
                     net_cmd.dest = dir[lcl].owner;
-                    net_cmd.proc_cmd = pc;   
+                    net_cmd.proc_cmd = pc;
 
-                    to_net_req_q.push(net_cmd); 
+                    to_net_req_q.push(net_cmd);
                     // enqueue to the local to_net_req_q rather than directly send to the network 
-                    
+
                     proc_cmd_p = false; // clear proc_cmd
                     // sharer list won't be updated for now
                     // dir state won't be updated to OWNED for now
@@ -251,9 +251,9 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     // no cache reply for now                
                 } else {
                     ERROR("invalid directory state seen at node %d\n", node);
-                }    
+                }
 
-                break;            
+                break;
 
             case INVALIDATE:
                 // replacement
@@ -268,7 +268,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     if (dir[lcl].owner != node) {
                         ERROR("Non-owner write-back: owner %d, node %d\n", dir[lcl].owner, node);
                     }
-                copy_cache_line(mem[lcl], pc.data);
+                    copy_cache_line(mem[lcl], pc.data);
                     dir[lcl].state = DIR_INVALID;
 
                 } else {
@@ -284,8 +284,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
         net_cmd.src = node;
         net_cmd.dest = dest;
         net_cmd.proc_cmd = pc;
-                
-        to_net_req_q.push(net_cmd); 
+
+        to_net_req_q.push(net_cmd);
         // enqueue to the local to_net_req_q rather than directly send to the network 
 
         proc_cmd_p = false; // clear proc_cmd
@@ -340,7 +340,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *                  # If the requestor is not one of sharers, forward the request to the owner
  *              + If there aren't sharers, forward the request to the owner
  *      * This cache block is Shared-no-data
- *          - Return non-ack response
+ *          - If the dest is current node, Copy data to the directory and change to Invalid state
+ *          - Else, return non-ack response
  *      * This cache block is Invalid
  *          - Change state to modified state, setup owner, and return data with exclusive
  *
@@ -421,7 +422,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
  *      * Update owner id
  *  8. Read request ack (forwarded request)
  *      * Fill memory
- *      * Change state from Shared-no-data to Shared and update sharer list
+ *      * Change state from Shared-no-data/Invalid to Shared and update sharer list
  *
  * @param net_cmd Network command
  * @return Success or not
