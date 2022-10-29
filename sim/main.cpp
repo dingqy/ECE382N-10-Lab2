@@ -81,6 +81,9 @@ void init_system() {
 
     for (int p = 0; p < args.num_procs; ++p) {
         procs[p] = new proc_t(p);
+        // Set - 3 bits
+        // Associativity - 4
+        // OFFSET - 4 bits
         caches[p] = new cache_t(p, 2, 3, LG_CACHE_LINE_SIZE);
         ius[p] = new iu_t(p);;
 

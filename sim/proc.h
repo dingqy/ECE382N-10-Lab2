@@ -8,6 +8,8 @@
 
 #include "types.h"
 
+extern int cur_cycle;
+
 
 // models a processor's ld/st stream
 class proc_t {

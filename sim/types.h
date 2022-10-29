@@ -45,7 +45,7 @@ typedef struct {
 extern args_t args;
 
 typedef enum {
-    DIR_INVALID, DIR_SHARED, DIR_OWNED
+    DIR_INVALID, DIR_SHARED, DIR_OWNED, DIR_SHARED_NO_DATA
 } dir_state_t;
 
 typedef struct {

@@ -65,6 +65,8 @@ public:
     // TODO: Function for tests
     dir_t get_dir_entry(int index);
 
+    void set_mem(int addr, const data_t data);
+
 };
 
 #endif

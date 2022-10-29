@@ -463,3 +463,7 @@ void iu_t::print_stats() {
 dir_t iu_t::get_dir_entry(int index) {
     return dir[index];
 }
+
+void iu_t::set_mem(int addr, const data_t data) {
+    for (int i = 0; i < CACHE_LINE_SIZE; ++i) mem[addr][i] = data[i];
+}
