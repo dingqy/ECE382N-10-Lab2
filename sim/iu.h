@@ -13,7 +13,6 @@
 #include "my_fifo.h"
 #include "cache.h"
 #include "network.h"
-#include <queue>
 
 class iu_t {
     int node;
@@ -52,6 +51,9 @@ class iu_t {
 
     // for retry
     bool  proc_cmd_retry_p;
+
+    // buffers to queues
+    iu_net_buffer_t net_buffer;
     
 
 public:
@@ -76,6 +78,9 @@ public:
     void set_mem(int addr, const data_t data);
 
     int get_mem(int addr);
+
+    // buffer request
+    void to_buffer(pri_t pri, net_cmd_t net_cmd);
 
 };
 
