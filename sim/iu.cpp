@@ -839,12 +839,9 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         // reply to the dir with data
                         net_cmd.dest = gen_node(pc.addr);
+                        
+                        to_buffer(REPLY, net_cmd);
 
-                        enqueue_status = net->to_net(node, REPLY, net_cmd);
-                        if (!enqueue_status) {
-                            // REPLY queue is full
-                            to_buffer(REPLY, net_cmd);
-                        }
                     }
                 } else {
                     ERROR_ARGS(("Invalid bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
