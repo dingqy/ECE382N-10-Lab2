@@ -493,7 +493,6 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         dir[lcl].shared_nodes |= (1 << src);
 
                         net_cmd.dest = src;
-                        net_cmd.src = node;
                         copy_cache_line(pc.data, mem[lcl]);
                         net_cmd.proc_cmd = pc;
                         net_cmd.valid_p = 1;
@@ -540,7 +539,6 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                             net_cmd.proc_cmd = pc;
 
                             net_cmd.dest = src; // reply to the requestor with data
-                            net_cmd.src = node;
 
                             bool enqueue_status = net->to_net(node, REPLY, net_cmd);
                             if (!enqueue_status) {
@@ -580,7 +578,6 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
 
                     pc.permit_tag = EXCLUSIVE;
                     net_cmd.dest = src;
-                    net_cmd.src = node;
                     copy_cache_line(pc.data, mem[lcl]);
                     net_cmd.proc_cmd = pc;
                     net_cmd.valid_p = 1;
@@ -627,7 +624,6 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
 
                         // reply to the src node
                         net_cmd.dest = src;
-                        net_cmd.src = node;
                         net_cmd.proc_cmd = pc;
 
                         bool enqueue_status = net->to_net(node, REPLY, net_cmd);
@@ -642,7 +638,6 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         net_cmd.valid_p = 0;
 
                         net_cmd.dest = src;
-                        net_cmd.src = node;
                         net_cmd.proc_cmd = pc;
 
                         bool enqueue_status = net->to_net(node, REPLY, net_cmd);
@@ -661,7 +656,6 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                             net_cmd.valid_p = 0;
 
                             net_cmd.dest = src;
-                            net_cmd.src = node;
                             net_cmd.proc_cmd = pc;
 
                             bool enqueue_status = net->to_net(node, REPLY, net_cmd);
@@ -689,7 +683,6 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
 
                         pc.permit_tag = EXCLUSIVE;
                         net_cmd.dest = src;
-                        net_cmd.src = node;
                         copy_cache_line(pc.data, mem[lcl]);
                         net_cmd.proc_cmd = pc;
                         net_cmd.valid_p = 1;
@@ -719,7 +712,6 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
 
             // reply to the src node (the dir)
             net_cmd.dest = src;
-            net_cmd.src = node;
             net_cmd.proc_cmd = pc;
             net_cmd.valid_p = 1;
 
@@ -760,7 +752,6 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         net_cmd.valid_p = 0;
                         net_cmd.dest = src;
-                        net_cmd.src = node;
 
                         bool enqueue_status = net->to_net(node, REPLY, net_cmd);
                         if (!enqueue_status) {
@@ -782,7 +773,6 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         // reply to the requestor with data
                         net_cmd.dest = src;
-                        net_cmd.src = node;
 
                         bool enqueue_status = net->to_net(node, REPLY, net_cmd);
                         if (!enqueue_status) {
@@ -809,7 +799,6 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         net_cmd.valid_p = 0;
                         net_cmd.dest = src;
-                        net_cmd.src = node;
 
                         bool enqueue_status = net->to_net(node, REPLY, net_cmd);
                         if (!enqueue_status) {
@@ -829,7 +818,6 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         // reply to the requestor with data
                         net_cmd.dest = src;
-                        net_cmd.src = node;
 
                         bool enqueue_status = net->to_net(node, REPLY, net_cmd);
                         if (!enqueue_status) {
@@ -839,7 +827,7 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         // reply to the dir with data
                         net_cmd.dest = gen_node(pc.addr);
-                        
+
                         to_buffer(REPLY, net_cmd);
 
                     }
