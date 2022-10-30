@@ -18,6 +18,7 @@
 #include "cache.h"
 #include "proc.h"
 #include "test.h"
+#include "helpers.h"
 
 /**
  * Constructor of processor
@@ -101,7 +102,7 @@ void proc_t::bind(cache_t *c) {
  *  - Directory Owned (Global) -> Read request 1 -> Forward request -> Network -> Node reply non-ack (To directory and source) -> Resubmit / Retry -> Shared in both caches and directory
  *  - Directory Shared-no-data -> Read request 2 -> Forward request -> Network -> Resubmit / Retry -> Shared in sources and sharer update in directory
  *
- * Case 9:
+ * Case 10:
  *  - Directory Owned (Global) -> Read request 1 -> Forward request -> Network -> Node reply non-ack (To directory and source) -> Resubmit / Retry -> Shared in both caches and directory
  *  - Directory Shared-no-data -> Write request 2 -> Non-ack -> Retry -> Directory Shared -> Forward -> Network -> Node reply non-ack (To source) -> Resubmit / Retry -> Shared in sources and sharer update in directory
  * --------------------------------------------------------------------------------------------------------------
@@ -124,27 +125,77 @@ void proc_t::bind(cache_t *c) {
 void proc_t::advance_one_cycle() {
     int data;
 
+    if (init_valid) {
+        for (auto &i: test_args[proc].test_inits) {
+            cache->set_mem(i.address, i.data);
+        }
+        init_valid = false;
+    }
+
+    test_args_t test_set = test_args[proc];
+
     // TODO: ADD test behavior here
     switch (args.test) {
         case 0:
             if (!response.retry_p) {
-                addr = random() % test_args.addr_range;
+                addr = random() % test_args[proc].addr_range;
                 ld_p = ((random() % 2) == 0);
             }
             if (ld_p) response = cache->load(addr, 0, &data, response.retry_p);
             else response = cache->store(addr, 0, cur_cycle, response.retry_p);
             break;
-
-            // TODO: Test cases
-            //
-
-
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 11:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+        case 16:
+        case 17:
+        case 18:
+        case 19:
+            if (case_index < test_set.test_cases.size()) {
+                if (cur_cycle >= test_set.test_cases[case_index].first) {
+                    if (test_set.test_cases[case_index].second.write) {
+                        response = cache->store(test_set.test_cases[case_index].second.address, 0,
+                                                test_set.test_cases[case_index].second.data,
+                                                response.retry_p);
+                    } else {
+                        response = cache->load(test_set.test_cases[case_index].second.address, 0, &data,
+                                               response.retry_p);
+                    }
+                    if (!response.retry_p) {
+                        case_index += 1;
+                    }
+                }
+            }
         default: ERROR("don't know this test case");
+    }
 
-
+    if (record_index < test_set.test_records.size()) {
+        int address = test_set.test_records[record_index].second.address;
+        if (cur_cycle == test_set.test_records[record_index].first) {
+            if (test_set.test_records[record_index].second.mem_cache) {
+                cache_access_response_t cache_rep;
+                cache->cache_access(address, INVALID, &cache_rep);
+                test_args[proc].test_results.emplace_back(cur_cycle,
+                                                          test_result_t{cache_rep.permit_tag, DIR_INVALID, address,
+                                                                        cache->read_data(address, cache_rep), 0x0,
+                                                                        0x0});
+            } else {
+                int lcl = gen_local_cache_line(address);
+                dir_t temp = cache->get_dir_entry(lcl);
+                test_args[proc].test_results.emplace_back(cur_cycle,
+                                                          test_result_t{INVALID, temp.state, address,
+                                                                        cache->get_mem(address), temp.shared_nodes,
+                                                                        temp.owner});
+            }
+            record_index += 1;
+        }
     }
 }
-
-
-
-

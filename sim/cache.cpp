@@ -446,18 +446,30 @@ void cache_t::reply(proc_cmd_t proc_cmd) {
 
 }
 
+dir_t cache_t::get_dir_entry(int index) {
+    return iu->get_dir_entry(index);
+}
+
+void cache_t::set_mem(int addr, const int *data) {
+    iu->set_mem(addr, data);
+}
+
+int cache_t::get_mem(int addr) {
+    return iu->get_mem(addr);
+}
+
 /**
  * Notify the cache from Intersection Unit for network request
  *
  * if INVALIDATE bus op, invalidate itself
  * if READ/WRITE bus op, demote/evict accordingly and provide modified data
- * 
+ *
  * @param net_cmd Network request
  */
 response_t cache_t::snoop(net_cmd_t net_cmd) {
 
     proc_cmd_t new_pc = net_cmd.proc_cmd;
-    
+
     response_t resp;
     cache_access_response_t car;
 
@@ -470,12 +482,12 @@ response_t cache_t::snoop(net_cmd_t net_cmd) {
             // invalidate itself
             tags[car.way][car.set].permit_tag = INVALID;
             tags[car.way][car.set].replacement = -1;
-            NOTE_ARGS(("Node %d cache saw INVALIDATE request from node %d at addr %d, invalidated itself", node, net_cmd.src, new_pc.addr));           
-        
+            NOTE_ARGS(("Node %d cache saw INVALIDATE request from node %d at addr %d, invalidated itself", node, net_cmd.src, new_pc.addr));
+
         } else if (new_pc.busop == WRITE) {
             // a forwarded write request
             copy_cache_line(new_pc.data, tags[car.set][car.way].data);
-            iu->from_proc(new_pc); 
+            iu->from_proc(new_pc);
 
             // invalidate itself
             tags[car.way][car.set].permit_tag = INVALID;
@@ -485,8 +497,8 @@ response_t cache_t::snoop(net_cmd_t net_cmd) {
         } else if (new_pc.busop == READ) {
             // a forwarded read request
             copy_cache_line(new_pc.data, tags[car.set][car.way].data);
-            iu->from_proc(new_pc); 
-            
+            iu->from_proc(new_pc);
+
             // downgrade itself
             tags[car.way][car.set].permit_tag = SHARED;
             NOTE_ARGS(("Node %d cache saw READ request from node %d at addr %d, this is unnecessary traffic", node, net_cmd.src, new_pc.addr));
@@ -497,7 +509,7 @@ response_t cache_t::snoop(net_cmd_t net_cmd) {
         // miss
         NOTE_ARGS(("Node %d cache missed when seeing %d request from node %d at addr %d", node, new_pc.busop, net_cmd.src, new_pc.addr));
         resp.hit_p = false;
-    } 
+    }
 
     return resp;
 }

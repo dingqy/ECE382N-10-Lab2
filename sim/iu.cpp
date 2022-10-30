@@ -22,7 +22,7 @@ iu_t::iu_t(int __node) {
     for (int i = 0; i < MEM_SIZE; ++i)
         for (int j = 0; j < CACHE_LINE_SIZE; ++j)
             mem[i][j] = 0;
-    
+
     to_net_inv_q.init(SIZE_INV_QUEUE);
 }
 
@@ -65,7 +65,7 @@ void iu_t::advance_one_cycle() {
 
     } else if (proc_cmd_p && !proc_cmd_processed_p) {
         proc_cmd_processed_p = true;    // do not process the same proc cmd repeatedly
-                                        // will be reset to false if retry needed
+        // will be reset to false if retry needed
         process_proc_request(proc_cmd);
     }
 
@@ -100,7 +100,8 @@ bool iu_t::from_proc(proc_cmd_t pc) {
         }
     } else {
         forward_cmd_p = false;
-        forward_net_cmd = pc;   
+        forward_net_cmd = pc;
+        return false;
     }
 }
 
@@ -194,7 +195,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
                     while (enqueue_status) {
                         enqueue_status = net->to_net(node, FORWARD, net_cmd);
-                    } 
+                    }
 
                     // temporarily set dir state to DIR_SHARED_NO_DATA
                     // in case write requests come and we need to send invalidates
@@ -213,7 +214,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
             case WRITE: {
                 // Write to memory
                 if (dir[lcl].state == DIR_INVALID) {
-                    
+
                     // first time request, change cache state to modified and setup owner
                     dir[lcl].shared_nodes = (1 << node);
                     dir[lcl].owner = node;
@@ -224,7 +225,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     cache->reply(pc);
                     proc_cmd_p = false; // clear proc_cmd
                 } else if (dir[lcl].state == DIR_SHARED) {
-                    
+
                     // If it is shared with other nodes, send invalidates to all sharers
                     if (dir[lcl].shared_nodes == 0) {
                         ERROR("sharer list should not be zero");
@@ -242,10 +243,10 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                                 net_cmd.src = node;
                                 net_cmd.dest = i_node;
                                 pc.busop = INVALIDATE;
-                                net_cmd.proc_cmd = pc; 
+                                net_cmd.proc_cmd = pc;
 
                                 // enqueue to the local queue for invalidations
-                                to_net_inv_q.push_back(net_cmd);                         
+                                to_net_inv_q.push_back(net_cmd);
                             }
                         }
                     }
@@ -253,7 +254,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     // sharer list won't be updated for now
                     // the requestor won't be the owner for now 
                     // don't clear proc_cmp_p for now
-                
+
                 } else if (dir[lcl].state == DIR_OWNED) {
                     // If it is owned by other nodes, generate network request to invalidate the old owner
                     // get the newest copy, and update owner
@@ -269,7 +270,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     bool enqueue_status = net->to_net(node, REQUEST, net_cmd);
                     while (enqueue_status) {
                         net->to_net(node, REQUEST, net_cmd);
-                    } 
+                    }
 
                     // the requestor won't be the owner for now 
                     // no cache reply for now
@@ -277,12 +278,11 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
                 } else {
                     ERROR_ARGS(("invalid directory state seen at node %d\n", node));
-                }    
+                }
 
                 break;
             }
-            case INVALIDATE:
-                ERROR_ARGS(("Self INVALIDATE from node %d\n", node));
+            case INVALIDATE: ERROR_ARGS(("Self INVALIDATE from node %d\n", node));
                 break;
 
             case WRITEBACK: {
@@ -328,7 +328,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                 enqueue_status = net->to_net(node, REQUEST, net_cmd);
             }
         }
-        
+
         proc_cmd_p = false; // clear proc_cmd if successfully enqueued
         // no cache reply
     }
@@ -407,7 +407,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
     int src = net_cmd.src;
     int dest = net_cmd.dest;
 
-    if (gen_node(pc.addr) == node) { 
+    if (gen_node(pc.addr) == node) {
         /* not forwarded requests
             - depending on dir[lcl] states        
         */
@@ -416,7 +416,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                 if (dir[lcl].state == DIR_SHARED) {
                     // Return the data in the memory and update sharer list
                     dir[lcl].shared_nodes |= (1 << src);
-                    
+
                     net_cmd.dest = src;
                     net_cmd.src = node;
                     copy_cache_line(pc.data, mem[lcl]);
@@ -427,7 +427,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                     while (!enqueue_status) {
                         // REPLY queue has the highest priority
                         enqueue_status = net->to_net(node, REPLY, net_cmd);
-                    } 
+                    }
 
                 } else if (dir[lcl].state == DIR_SHARED_NO_DATA) {
                     // Forward request to the owner
@@ -437,7 +437,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                     bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
                     while (!enqueue_status) {
                         enqueue_status = net->to_net(node, FORWARD, net_cmd);
-                    } 
+                    }
 
                 } else if (dir[lcl].state == DIR_OWNED) {
                     if (node == dir[lcl].owner) {
@@ -451,12 +451,12 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         // have to access cache for data
                         forward_cmd_p = false;
 
-                        if(!r.hit_p) {
+                        if (!r.hit_p) {
                             ERROR_ARGS(("The owner %d lost the cache line for addr %d\n", node, pc.addr));
                         }
 
                         dir[lcl].state == DIR_SHARED;
-                        dir[lcl].shared_nodes |= (1 << src);  
+                        dir[lcl].shared_nodes |= (1 << src);
 
                         copy_cache_line(pc.data, forward_net_cmd.data);
                         pc.permit_tag = SHARED;
@@ -470,7 +470,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         while (!enqueue_status) {
                             // REPLY queue has the highest priority
                             enqueue_status = net->to_net(node, REPLY, net_cmd);
-                        }            
+                        }
 
                         net_cmd.dest = gen_node(pc.addr); // reply to the dir with data
 
@@ -478,7 +478,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         while (!enqueue_status) {
                             // REPLY queue has the highest priority
                             enqueue_status = net->to_net(node, REPLY, net_cmd);
-                        } 
+                        }
 
                     } else {
                         // If the owner is other nodes, 
@@ -486,7 +486,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         // update the sharer list, and forward the request to the owner
 
                         dir[lcl].state == DIR_SHARED_NO_DATA;
-                        dir[lcl].shared_nodes |= (1 << src);  
+                        dir[lcl].shared_nodes |= (1 << src);
 
                         // the src remains the same, the dest changes to the actural owner
                         net_cmd.dest = dir[lcl].owner;
@@ -494,11 +494,11 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
                         while (!enqueue_status) {
                             enqueue_status = net->to_net(node, FORWARD, net_cmd);
-                        } 
+                        }
 
                     }
                 } else { // dir[lcl].state == INVALID
-                    
+
                     // first time request, change dir state to OWNED, reply with EXCLUSIVE
                     dir[lcl].shared_nodes = (1 << src);
                     dir[lcl].owner = src;
@@ -515,7 +515,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                     while (!enqueue_status) {
                         // REPLY queue has the highest priority
                         enqueue_status = net->to_net(node, REPLY, net_cmd);
-                    } 
+                    }
                 }
                 break;
             }
@@ -524,7 +524,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                 if (dir[lcl].state == DIR_SHARED) {
                     // first check the capacity of the local inv queue
                     if (to_net_inv_q.space() < count_bits(dir[lcl].shared_nodes) - 1) {
-                        
+
                         // no-ack the src node (net_cmd.valid_p = 0)
                         net_cmd.valid_p = 0;
 
@@ -541,17 +541,17 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                     net_cmd.src = src; // we need to know who is the requestor
                                     net_cmd.dest = i_node;
                                     pc.busop = INVALIDATE;
-                                    net_cmd.proc_cmd = pc;  
+                                    net_cmd.proc_cmd = pc;
 
                                     // enqueue to the local queue for invalidations
-                                    to_net_inv_q.push_back(net_cmd); 
+                                    to_net_inv_q.push_back(net_cmd);
                                 }
                             }
                         }
                         // ack the src node (net_cmd.valid_p = 1)
                         net_cmd.valid_p = 1;
                     }
-                    
+
                     // reply to the src node
                     net_cmd.dest = src;
                     net_cmd.src = node;
@@ -561,10 +561,10 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                     while (!enqueue_status) {
                         // REPLY queue has the highest priority
                         enqueue_status = net->to_net(node, REPLY, net_cmd);
-                    } 
+                    }
 
                 } else if (dir[lcl].state == DIR_SHARED_NO_DATA) {
-                    
+
                     // reply to the src node (requestor) with no-ack (net_cmd.valid_p = 0)
                     net_cmd.valid_p = 0;
 
@@ -576,7 +576,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                     while (!enqueue_status) {
                         // REPLY queue has the highest priority
                         enqueue_status = net->to_net(node, REPLY, net_cmd);
-                    } 
+                    }
 
                 } else if (dir[lcl].state == DIR_OWNED) {
                     if (src == dir[lcl].owner) {
@@ -595,7 +595,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         while (!enqueue_status) {
                             // REPLY queue has the highest priority
                             enqueue_status = net->to_net(node, REPLY, net_cmd);
-                        }                     
+                        }
                     } else {
                         // the requestor is not one of sharers, forward the request to the owner
                         // the src remains the same, the dest changes to the actural owner
@@ -604,10 +604,10 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
                         while (!enqueue_status) {
                             enqueue_status = net->to_net(node, FORWARD, net_cmd);
-                        } 
+                        }
                     }
                 } else { // dir[lcl].state == INVALID
-                    
+
                     // first time request, change dir state to OWNED, reply with EXCLUSIVE
                     dir[lcl].shared_nodes = (1 << src);
                     dir[lcl].owner = src;
@@ -624,19 +624,17 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                     while (!enqueue_status) {
                         // REPLY queue has the highest priority
                         enqueue_status = net->to_net(node, REPLY, net_cmd);
-                    } 
+                    }
                 }
                 break;
             }
-            case INVALIDATE:   
-                ERROR_ARGS(("Dir %d received invalidates from node %d", node, src));
-                break;  
-
-            case WRITEBACK:
-                ERROR_ARGS(("Node %d: Writebacks shouldn't be in the request queue", node));           
+            case INVALIDATE: ERROR_ARGS(("Dir %d received invalidates from node %d", node, src));
                 break;
-        }      
-    } else { 
+
+            case WRITEBACK: ERROR_ARGS(("Node %d: Writebacks shouldn't be in the request queue", node));
+                break;
+        }
+    } else {
         // gen_node(pc.addr) != node
         // invalidates
         if (pc.busop == INVALIDATE) {
@@ -651,7 +649,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
             while (!enqueue_status) {
                 // REPLY queue has the highest priority
                 enqueue_status = net->to_net(node, REPLY, net_cmd);
-            } 
+            }
         } else {
             ERROR("REQUEST queue (if not INVALIDATES) should always satisfy gen_node(pc.addr) == node");
         }
@@ -666,7 +664,7 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
     int src = net_cmd.src;
     int dest = net_cmd.dest;
 
-    if (gen_node(pc.addr) != node) { 
+    if (gen_node(pc.addr) != node) {
         switch (pc.busop) {
             case (READ): {
                 forward_cmd_p = true;
@@ -674,19 +672,19 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                 // can't return the data back for now
                 // have to access cache for data
                 forward_cmd_p = false;
-                if(!r.hit_p) {
+                if (!r.hit_p) {
                     // if cache miss, return non-ack response to the source
                     NOTE_ARGS(("The owner %d has lost the cache line for addr %d\n", node, pc.addr));
-                    
+
                     net_cmd.valid_p = 0;
-                    net_cmd.dest = src; 
+                    net_cmd.dest = src;
                     net_cmd.src = node;
-                    
+
                     bool enqueue_status = net->to_net(node, REPLY, net_cmd);
                     while (!enqueue_status) {
                         // REPLY queue has the highest priority
                         enqueue_status = net->to_net(node, REPLY, net_cmd);
-                    }   
+                    }
                 } else {
                     // if hit
                     // - If cache block is modified/exclusive, return data directly to directory (Update sharer list) 
@@ -694,25 +692,25 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                     // - If cache block is shared, return data to the source
 
                     net_cmd.valid_p = 1;
-                    
+
                     copy_cache_line(pc.data, forward_net_cmd.data);
                     pc.permit_tag = SHARED;
                     pc.busop = WRITE;
                     net_cmd.proc_cmd = pc;
-                    
+
                     // reply to the requestor with data
-                    net_cmd.dest = src; 
+                    net_cmd.dest = src;
                     net_cmd.src = node;
-                    
+
                     bool enqueue_status = net->to_net(node, REPLY, net_cmd);
                     while (!enqueue_status) {
                         // REPLY queue has the highest priority
                         enqueue_status = net->to_net(node, REPLY, net_cmd);
-                    }       
+                    }
 
                     if (forward_net_cmd.permit_tag == MODIFIED || forward_net_cmd.permit_tag == EXCLUSIVE) {
                         // reply to the dir with data
-                        net_cmd.dest = gen_node(pc.addr); 
+                        net_cmd.dest = gen_node(pc.addr);
 
                         bool enqueue_status = net->to_net(node, REPLY, net_cmd);
                         while (!enqueue_status) {
@@ -730,14 +728,14 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                 // can't return the data back for now
                 // have to access cache for data
                 forward_cmd_p = false;
-                if(!r.hit_p) {
+                if (!r.hit_p) {
                     // if cache miss, return non-ack response to the source
                     NOTE_ARGS(("The owner %d has lost the cache line for addr %d\n", node, pc.addr));
-                    
+
                     net_cmd.valid_p = 0;
-                    net_cmd.dest = src; 
+                    net_cmd.dest = src;
                     net_cmd.src = node;
-                    
+
                     bool enqueue_status = net->to_net(node, REPLY, net_cmd);
                     while (!enqueue_status) {
                         // REPLY queue has the highest priority
@@ -748,24 +746,24 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                     // - return data to directory (Update sharer list) and source
 
                     net_cmd.valid_p = 1;
-                    
+
                     copy_cache_line(pc.data, forward_net_cmd.data);
                     pc.permit_tag = MODIFIED;
                     pc.busop = WRITE;
                     net_cmd.proc_cmd = pc;
-                    
+
                     // reply to the requestor with data
-                    net_cmd.dest = src; 
+                    net_cmd.dest = src;
                     net_cmd.src = node;
-                    
+
                     bool enqueue_status = net->to_net(node, REPLY, net_cmd);
                     while (!enqueue_status) {
                         // REPLY queue has the highest priority
                         enqueue_status = net->to_net(node, REPLY, net_cmd);
-                    }       
+                    }
 
                     // reply to the dir with data
-                    net_cmd.dest = gen_node(pc.addr); 
+                    net_cmd.dest = gen_node(pc.addr);
 
                     enqueue_status = net->to_net(node, REPLY, net_cmd);
                     while (!enqueue_status) {
@@ -776,14 +774,12 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                 break;
             }
 
-            case (INVALIDATE):
-                ERROR_ARGS(("Node %d: Invalidation shouldn't be in the forward queue", node));
+            case (INVALIDATE): ERROR_ARGS(("Node %d: Invalidation shouldn't be in the forward queue", node));
                 break;
-            case (WRITEBACK):
-                ERROR_ARGS(("Node %d: Writebacks shouldn't be in the forward queue", node));           
+            case (WRITEBACK): ERROR_ARGS(("Node %d: Writebacks shouldn't be in the forward queue", node));
                 break;
         }
-    
+
     } else {
         ERROR("FORWARD queue should satisfy gen_node(pc.addr) != node")
     }
@@ -798,7 +794,7 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
     int dest = net_cmd.dest;
 
     if (pc.busop == WRITEBACK) {
-        if (gen_node(pc.addr) == node) { 
+        if (gen_node(pc.addr) == node) {
             // write back
             // no reply generated
 
@@ -815,7 +811,7 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
                 copy_cache_line(mem[lcl], pc.data);
                 dir[lcl].state = DIR_INVALID;
                 dir[lcl].shared_nodes = 0;
-            }    
+            }
         } else {
             ERROR("WRITEBACK queue should satisfy gen_node(pc.addr) == node");
         }
@@ -873,7 +869,7 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                 // Change state from Shared-no-data/Invalid to Shared and update sharer list
                 copy_cache_line(mem[lcl], pc.data);
                 dir[lcl].state = DIR_SHARED;
-                dir[lcl].shared_nodes |= (1 << net_cmd.src);  
+                dir[lcl].shared_nodes |= (1 << net_cmd.src);
 
             } else {
                 // Read request ack (Not forwarded request)
@@ -894,7 +890,7 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                 // Update owner id
                 dir[lcl].state = DIR_OWNED;
                 dir[lcl].owner = net_cmd.src;
-                dir[lcl].shared_nodes = (1 << net_cmd.src);  
+                dir[lcl].shared_nodes = (1 << net_cmd.src);
 
             } else {
                 // Write request ack (Not forwarded request)
@@ -905,8 +901,7 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
             }
             break;
         }
-        case (WRITEBACK):
-            ERROR_ARGS(("Node: %d No WRITEBACK ACK expected for current implementation!", node));
+        case (WRITEBACK): ERROR_ARGS(("Node: %d No WRITEBACK ACK expected for current implementation!", node));
             break;
 
         case (INVALIDATE): {
@@ -916,7 +911,7 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
             } else {
                 // Update sharer list
                 uint temp = ~(1 << net_cmd.src);
-                dir[lcl].shared_nodes &= temp;   
+                dir[lcl].shared_nodes &= temp;
 
                 // End the processor command when all invalidations acked
                 if ((dir[lcl].shared_nodes == 0) || (dir[lcl].shared_nodes == (1 << net_cmd.src))) {
@@ -942,5 +937,14 @@ dir_t iu_t::get_dir_entry(int index) {
 }
 
 void iu_t::set_mem(int addr, const data_t data) {
-    for (int i = 0; i < CACHE_LINE_SIZE; ++i) mem[addr][i] = data[i];
+    int lcl = gen_local_cache_line(addr);
+
+    for (int i = 0; i < CACHE_LINE_SIZE; ++i) mem[lcl][i] = data[i];
+}
+
+int iu_t::get_mem(int addr) {
+    int lcl = gen_local_cache_line(addr);
+    int offset = addr & ((1 << LG_CACHE_LINE_SIZE) - 1);
+
+    return mem[lcl][offset];
 }

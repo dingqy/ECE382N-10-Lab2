@@ -105,6 +105,12 @@ public:
     // snoop side
     response_t snoop(net_cmd_t net_cmd);
 
+    dir_t get_dir_entry(int index);
+
+    void set_mem(int addr, const data_t data);
+
+    int get_mem(int addr);
+
 };
 
 #endif

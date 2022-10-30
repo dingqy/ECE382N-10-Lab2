@@ -21,6 +21,12 @@ class proc_t {
 
     cache_t *cache;
 
+    bool init_valid = true;
+
+    int record_index;
+
+    int case_index;
+
 public:
     proc_t(int p);
 

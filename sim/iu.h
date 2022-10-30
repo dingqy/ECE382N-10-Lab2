@@ -75,6 +75,8 @@ public:
 
     void set_mem(int addr, const data_t data);
 
+    int get_mem(int addr);
+
 };
 
 #endif
