@@ -75,50 +75,34 @@ void proc_t::bind(cache_t *c) {
  * Case 5:
  *  - Directory Owned (Global) -> Read request -> Forward request -> Network -> Node reply (To directory and source) -> Shared in both caches and directory
  *
- * Case 6.1:
+ * Case 6:
  *  - Directory Owned (Local) -> Invalidate request (Write back) -> Copy data and Invalid state in directory
  *
- * Case 6.2 (19):
+ * Case 7:
  *  - Directory Owned (Global) -> Write request (Write back) -> Copy data and Invalid state in directory
  *
- * Case 11:
+ * Case 8:
  *  - Directory Owned (Global) -> Write request -> Forward request -> Network -> Node reply (To directory and source) -> Modified in one cache, Invalid in other cache, and owner change in directory
  *
- * Case 12:
+ * Case 9:
  *  - Directory Owned (Local) -> Read request -> Forward request -> Network -> Node reply (To directory and source) -> Shared in both caches and directory
  *
- * Case 18:
+ * Case 10:
  *  - Directory Owned (Local) -> Write request -> Forward request -> Network -> Node reply (To directory and source) -> Modified in one cache, Invalid in other cache, and owner change in directory
  * --------------------------------------------------------------------------------------------------------------
- * Case 7:
- *  - Directory Owned (Global) -> Read request 1 -> Forward request -> Network -> Node reply (To directory and source) -> Shared in both caches and directory
- *  - Directory Shared-no-data -> Read request 2 -> Forward request -> Network -> Node reply (To source) -> Shared in sources and sharer update in directory
- *
- * Case 8:
- *  - Directory Owned (Global) -> Read request 1 -> Forward request -> Network -> Node reply (To directory and source) -> Shared in both caches and directory
- *  - Directory Shared-no-data -> Read request 2 -> Forward request -> Network -> Resubmit / Retry -> Shared in sources and sharer update in directory
- *
- * Case 9:
- *  - Directory Owned (Global) -> Read request 1 -> Forward request -> Network -> Node reply non-ack (To directory and source) -> Resubmit / Retry -> Shared in both caches and directory
- *  - Directory Shared-no-data -> Read request 2 -> Forward request -> Network -> Resubmit / Retry -> Shared in sources and sharer update in directory
- *
- * Case 10:
- *  - Directory Owned (Global) -> Read request 1 -> Forward request -> Network -> Node reply non-ack (To directory and source) -> Resubmit / Retry -> Shared in both caches and directory
- *  - Directory Shared-no-data -> Write request 2 -> Non-ack -> Retry -> Directory Shared -> Forward -> Network -> Node reply non-ack (To source) -> Resubmit / Retry -> Shared in sources and sharer update in directory
- * --------------------------------------------------------------------------------------------------------------
- * Case 13:
+ * Case 11:
  *  - Directory Shared -> Read request -> Node reply (To source) -> Shared in cache and sharer list update in directory
  *
- * Case 14:
+ * Case 12:
  *  - Directory Shared -> Write request -> Invalidation broadcast -> Node reply (To source) -> Invalidation ack -> Modified in cache, invalidation, and owned in directory
  *
- * Case 15:
+ * Case 13:
  *  - Directory Shared -> Write request (write back) -> Update sharer list
  * --------------------------------------------------------------------------------------------------------------
- * Case 16:
+ * Case 14:
  *  - Directory Shared-no-data -> Read request -> Forward request -> Node reply (To directory and source) -> Shared in cache and sharer list update
  *
- * Case 17:
+ * Case 15:
  *  - Directory Shared-no-data -> Write request (write back) -> Invalid in directory
  * --------------------------------------------------------------------------------------------------------------
  */
