@@ -504,7 +504,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                     // first time request, change dir state to OWNED, reply with EXCLUSIVE
                     dir[lcl].shared_nodes = (1 << src);
                     dir[lcl].owner = src;
-                    dir[lcl].state == DIR_OWNED;
+                    dir[lcl].state = DIR_OWNED;
 
                     pc.permit_tag = EXCLUSIVE;
                     net_cmd.dest = src;

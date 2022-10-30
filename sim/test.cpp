@@ -48,7 +48,7 @@ void init_test() {
             }
             init_temp[1] = 1;
 
-            test_args[1].test_inits.emplace_back(0x00010001, init_temp);
+            test_args[1].test_inits.emplace_back(0x00000101, init_temp);
             test_args[0].test_cases.emplace_back(0, test_case_t{false, 0x00000101, 0});
             test_args[0].test_records.emplace_back(21, test_record_t{true, 0x00000101});
             test_args[1].test_records.emplace_back(21, test_record_t{false, 0x00000101});
@@ -245,6 +245,7 @@ void init_test() {
 void finish_test() {
     double hr;
 
+    std::cout << "-------------------------------------------------------" << std::endl;
     for (int i = 0; i < args.num_procs; ++i) {
         switch (args.test) {
             case 0:
@@ -268,6 +269,7 @@ void finish_test() {
             case 17:
             case 18:
             case 19:
+                std::cout << "Processor: " << i << " Checking..." << std::endl;
                 for (int j = 0; j < test_args[i].test_goldens.size(); j++) {
                     test_result_t test_result = test_args[i].test_results[j].second;
                     test_result_t test_golden = test_args[i].test_goldens[j].second;
@@ -275,7 +277,7 @@ void finish_test() {
                         ERROR("Cache state error")
                     }
                     if (test_result.mem_state != test_golden.mem_state) {
-                        ERROR("Cache state error")
+                        ERROR("Directory state error")
                     }
                     if (test_golden.cache_state >= 1) {
                         if (test_result.data != test_golden.data) {
@@ -302,6 +304,7 @@ void finish_test() {
                 break;
             default: ERROR("don't recognize this test");
         }
+        std::cout << "-------------------------------------------------------" << std::endl;
     }
     printf("passed\n");
 }
