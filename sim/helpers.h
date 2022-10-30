@@ -27,3 +27,8 @@ void terminate_on_error();
 int lg(int x);
 
 char *PRI2STRING(pri_t pri);
+
+bool check_onehot(uint num);
+
+bool count_bits(uint num);
+

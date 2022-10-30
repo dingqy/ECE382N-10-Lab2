@@ -22,6 +22,8 @@ iu_t::iu_t(int __node) {
     for (int i = 0; i < MEM_SIZE; ++i)
         for (int j = 0; j < CACHE_LINE_SIZE; ++j)
             mem[i][j] = 0;
+    
+    to_net_inv_q.init(SIZE_INV_QUEUE);
 }
 
 /**
@@ -47,24 +49,31 @@ void iu_t::advance_one_cycle() {
     // fixed priority: reply from network
     if (net->from_net_p(node, REPLY)) {
         process_net_reply(net->from_net(node, REPLY));
-        NOTE_ARGS("node #%d processes a %s\n", node, "REPLY");
+        NOTE_ARGS(("node #%d processes a %s\n", node, "REPLY"));
 
-    } else if (net->from_net_p(node, WRITEBACK)) {
-        process_net_writeback(net->from_net(node, WRITEBACK));
-        NOTE_ARGS("node #%d proceses a %s\n", node, "WRITEBACK");
+    } else if (net->from_net_p(node, WRBACK)) {
+        process_net_writeback(net->from_net(node, WRBACK));
+        NOTE_ARGS(("node #%d proceses a %s\n", node, "WRBACK"));
 
     } else if (net->from_net_p(node, FORWARD)) {
         process_net_forward(net->from_net(node, FORWARD));
-        NOTE_ARGS("node #%d processes a %s\n", node, "FORWARD");
+        NOTE_ARGS(("node #%d processes a %s\n", node, "FORWARD"));
 
     } else if (net->from_net_p(node, REQUEST)) {
         process_net_request(net->from_net(node, REQUEST));
-        NOTE_ARGS("node #%d processes a %s\n", node, "REQUEST");
+        NOTE_ARGS(("node #%d processes a %s\n", node, "REQUEST"));
 
     } else if (proc_cmd_p && !proc_cmd_processed_p) {
-        // TODO: proc_cmd_processed_p depends on whether the network request is submitted successfully
-        proc_cmd_processed_p = true;
+        proc_cmd_processed_p = true;    // do not process the same proc cmd repeatedly
+                                        // will be reset to false if retry needed
         process_proc_request(proc_cmd);
+    }
+
+    // enqueue network REQUEST
+    net_cmd_t inv_net_cmd = to_net_inv_q.dequeue();
+    bool enqueue_status = net->to_net(node, REQUEST, inv_net_cmd);
+    if (!enqueue_status) {
+        to_net_inv_q.push_front(inv_net_cmd);
     }
 }
 
@@ -79,14 +88,19 @@ void iu_t::advance_one_cycle() {
  * @return Boolean value for whether there is one command registered.
  */
 bool iu_t::from_proc(proc_cmd_t pc) {
-    if (!proc_cmd_p) {
-        proc_cmd_p = true;
-        proc_cmd = pc;
+    if (!forward_cmd_p) {
+        if (!proc_cmd_p) {
+            proc_cmd_p = true;
+            proc_cmd = pc;
 
-        proc_cmd_processed_p = false;
-        return (false);
+            proc_cmd_processed_p = false;
+            return (false); // cannot accept a new proc cmd
+        } else {
+            return (true); // can accept a new proc cmd
+        }
     } else {
-        return (true);
+        forward_cmd_p = false;
+        forward_net_cmd = pc;   
     }
 }
 
@@ -103,29 +117,29 @@ bool iu_t::from_proc(proc_cmd_t pc) {
  * Processor request
  *  1. Cache read miss
  *      * Local memory access
- *          -x If it is owned by other nodes, then it needs to downgrade the owner node, get the newest copy, and update owner
+ *          x If it is owned by other nodes, then it needs to downgrade the owner node, get the newest copy, and update owner
  *          x If it is shared with other nodes, update sharer list
  *          x If it is the only copy, then change request state to exclusive state and setup sharer list (not initial shared state)
  *      * Global memory access
- *          - Send request through network (read request)
+ *          x Send request through network (read request)
  *  2. Cache write miss
  *      * Local memory access
- *          -x If it is owned by other nodes, then it needs to downgrade owner node to invalidate, get the newest copy, and update owner
+ *          x If it is owned by other nodes, then it needs to downgrade owner node to invalidate, get the newest copy, and update owner
  *          -x If it is shared by other nodes, then it needs to invalidate all the sharers, wait for all acknowledgement, and update sharer list
  *          x If it is the only copy, setup owner
  *      * Global memory access
- *          - send request through network (write request)
+ *          x send request through network (write request)
  *  3. Replacement write back (modified/exclusive state)
  *      * Local memory access
- *          - Copy the data into memory and change directory state to be Invalid
+ *          -x Copy the data into memory and change directory state to be Invalid
  *      * Global memory access
- *          - send request through network (invalidate request, need to downgrade the directory state)
+ *          -x send request through network (invalidate request, need to downgrade the directory state)
  *          - Buffer the data into victim buffer
  *  4. Replacement write back (shared state)
  *      * Local memory access
- *          - Update sharer list
+ *          x Update sharer list
  *      * Global memory access
- *          - send request through network (invalidate request, need to update the sharer list)
+ *          -x send request through network (invalidate request, need to update the sharer list)
  *
  * @param pc Processor command
  * @return Success or not (???)
@@ -136,17 +150,20 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
     NOTE_ARGS(("%d: addr = %d, dest = %d", node, pc.addr, dest));
 
+    proc_cmd_processed_p = true; // it has been processed, but the cmd is not cleared yet
+
     if (dest == node) { // local
 
         ++local_accesses;
 
         switch (pc.busop) {
-            case READ:
+            case READ: {
                 // Read from memory
                 if (dir[lcl].state == DIR_INVALID) {
                     // first time request, change cache state to exclusive and setup sharer list
                     dir[lcl].shared_nodes = (1 << node);
                     dir[lcl].owner = node;
+                    dir[lcl].state == DIR_OWNED;
 
                     copy_cache_line(pc.data, mem[lcl]);
                     pc.permit_tag = EXCLUSIVE;
@@ -175,57 +192,68 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     net_cmd.proc_cmd = pc;
 
                     bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
-                    if (enqueue_status) {
-                        proc_cmd_p = false; // clear proc_cmd if successfully enqueued
-                    }
+                    while (enqueue_status) {
+                        enqueue_status = net->to_net(node, FORWARD, net_cmd);
+                    } 
+
+                    // temporarily set dir state to DIR_SHARED_NO_DATA
+                    // in case write requests come and we need to send invalidates
+                    dir[lcl].state == DIR_SHARED_NO_DATA;
+                    dir[lcl].shared_nodes |= (1 << node);
+
                     // no cache reply for now
-                    // owner won't be changed for now
+                    // don't clear proc_cmd for now
+                    // dir state won't be SHARED for now
 
                 } else {
-                    ERROR("invalid directory state seen at node %d\n", node);
+                    ERROR_ARGS(("invalid directory state seen at node %d\n", node));
                 }
                 break;
-
-            case WRITE:
+            }
+            case WRITE: {
                 // Write to memory
                 if (dir[lcl].state == DIR_INVALID) {
+                    
                     // first time request, change cache state to modified and setup owner
                     dir[lcl].shared_nodes = (1 << node);
                     dir[lcl].owner = node;
-                    pc.permit_tag = MODIFIED;
+                    dir[lcl].state == DIR_OWNED;
+                    pc.permit_tag = EXCLUSIVE;
+                    copy_cache_line(pc.data, mem[lcl]);
 
                     cache->reply(pc);
                     proc_cmd_p = false; // clear proc_cmd
                 } else if (dir[lcl].state == DIR_SHARED) {
+                    
                     // If it is shared with other nodes, send invalidates to all sharers
-
                     if (dir[lcl].shared_nodes == 0) {
                         ERROR("sharer list should not be zero");
                     } else if (check_onehot(dir[lcl].shared_nodes)) {
                         ERROR("should have at least two sharers");
                     }
 
-                    for (int i_node = 0; i_node < 32; i++) {
+                    dir[lcl].state = DIR_OWNED;
+
+                    for (int i_node = 0; i_node < 32; i_node++) {
                         if ((dir[lcl].shared_nodes >> i_node) & 0x1) {
                             if (i_node != node) {
                                 // don't send invalidates to the requestor if it is in the sharer list
                                 net_cmd_t net_cmd;
                                 net_cmd.src = node;
                                 net_cmd.dest = i_node;
-                                net_cmd.proc_cmd = pc;
+                                pc.busop = INVALIDATE;
+                                net_cmd.proc_cmd = pc; 
 
-                                to_net_req_q.push(net_cmd);
-                                // enqueue to the local to_net_req_q rather than directly send to the network                             
+                                // enqueue to the local queue for invalidations
+                                to_net_inv_q.push_back(net_cmd);                         
                             }
                         }
                     }
 
-                    proc_cmd_p = false; // clear proc_cmd
-
                     // sharer list won't be updated for now
-                    // dir state won't be updated to OWNED for now
                     // the requestor won't be the owner for now 
-                    // no cache reply for now 
+                    // don't clear proc_cmp_p for now
+                
                 } else if (dir[lcl].state == DIR_OWNED) {
                     // If it is owned by other nodes, generate network request to invalidate the old owner
                     // get the newest copy, and update owner
@@ -238,21 +266,26 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     net_cmd.dest = dir[lcl].owner;
                     net_cmd.proc_cmd = pc;
 
-                    to_net_req_q.push(net_cmd);
-                    // enqueue to the local to_net_req_q rather than directly send to the network 
+                    bool enqueue_status = net->to_net(node, REQUEST, net_cmd);
+                    while (enqueue_status) {
+                        net->to_net(node, REQUEST, net_cmd);
+                    } 
 
-                    proc_cmd_p = false; // clear proc_cmd
-                    // sharer list won't be updated for now
-                    // dir state won't be updated to OWNED for now
                     // the requestor won't be the owner for now 
-                    // no cache reply for now                
+                    // no cache reply for now
+                    // don't clear proc_cmd for now    
+
                 } else {
-                    ERROR("invalid directory state seen at node %d\n", node);
-                }
+                    ERROR_ARGS(("invalid directory state seen at node %d\n", node));
+                }    
 
                 break;
-
+            }
             case INVALIDATE:
+                ERROR_ARGS(("Self INVALIDATE from node %d\n", node));
+                break;
+
+            case WRITEBACK: {
                 // replacement
                 // no cache reply generated
                 if (dir[lcl].state == DIR_SHARED) {
@@ -263,15 +296,17 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                 } else if (dir[lcl].state == DIR_OWNED) {
                     // owned: copy the data into memory and change directory state to be Invalid
                     if (dir[lcl].owner != node) {
-                        ERROR("Non-owner write-back: owner %d, node %d\n", dir[lcl].owner, node);
+                        ERROR_ARGS(("Non-owner write-back: owner %d, node %d\n", dir[lcl].owner, node));
                     }
                     copy_cache_line(mem[lcl], pc.data);
                     dir[lcl].state = DIR_INVALID;
+                    dir[lcl].shared_nodes = 0;
 
                 } else {
-                    ERROR("Invalid write-back request from node %d\n", dest);
+                    ERROR_ARGS(("Invalid write-back request from node %d\n", node));
                 }
                 break;
+            }
         }
 
     } else { // global
@@ -281,15 +316,21 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
         net_cmd.src = node;
         net_cmd.dest = dest;
         net_cmd.proc_cmd = pc;
-                
-        to_net_req_q.push(net_cmd); 
-        // enqueue to the local to_net_req_q rather than directly send to the network 
 
-        to_net_req_q.push(net_cmd);
-        // enqueue to the local to_net_req_q rather than directly send to the network 
-
-        proc_cmd_p = false; // clear proc_cmd
-        // no cache reply for now 
+        if (pc.busop == WRITEBACK) {
+            bool enqueue_status = net->to_net(node, WRBACK, net_cmd);
+            while (!enqueue_status) {
+                enqueue_status = net->to_net(node, WRBACK, net_cmd);
+            }
+        } else {
+            bool enqueue_status = net->to_net(node, REQUEST, net_cmd);
+            while (!enqueue_status) {
+                enqueue_status = net->to_net(node, REQUEST, net_cmd);
+            }
+        }
+        
+        proc_cmd_p = false; // clear proc_cmd if successfully enqueued
+        // no cache reply
     }
 }
 
@@ -300,28 +341,28 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *
  * Network request
  *  1. Read request (Not forwarded request)
- *      * This cache block is Shared
- *          - Return the data in the memory and update sharer list
- *      * This cache block is Shared-no-data
+ *      x This cache block is Shared
+ *          x Return the data in the memory and update sharer list
+ *      x This cache block is Shared-no-data
  *          - Forward request to the owner
- *      * This cache block is Modified
+ *      x This cache block is Owned
  *          - If the owner is current node, access the cache to get the newest copy, downgrade the cache state,
  *            change the directory state to be Shared, and update sharer list.
- *          - If the owner is other nodes, change state to be Shared-no-data, and forward the request to the owner
- *      * This cache block is Invalid
- *          - Change state to modified state, setup owner, and return data with exclusive
+ *          - If the owner is other nodes, change state to be Shared-no-data, update the sharer list, and forward the request to the owner
+ *      x This cache block is Invalid
+ *          - Change state to owned state, setup owner, and return data with exclusive
  *
  *  2. Read request (forwarded request)
- *      * Access the cache
+ *      x Access the cache
  *          - If cache miss,
  *              + If it is in victim buffer, return data to the source
  *              + else, return non-ack response to the source
  *          - If cache hit
- *              + If cache block is modified/exclusive, return data directly to directory (Update sharer list) and source (Downgrade to shared)
+ *              + If cache block is modified/exclusive, return data directly to directory (Update sharer list) and source
  *              + If cache block is shared, return data to the source
  *
  *  3. Write request (Not forwarded request)
- *      * This cache block is Shared
+ *      x This cache block is Shared
  *          - If the permitted tag is Modified:
  *              + Change the block to be Modified state
  *              + Send invalidation requests until all the sharers acknowledge (Push requests into the queue)
@@ -329,32 +370,29 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *                        One possible solution is add one internal request queue and buffer the request temporarily
  *                        If the buffer is full, and invalidation queue is still not enough, non-ack response is sent
  *              + Send acknowledge back to source node
- *          - If the permitted tag is Shared:
+ *          o If the permitted tag is Shared: - MOVED TO INVALIDATION
  *              + Update sharer list (Change 1 to 0)
- *      * This cache block is Modified
- *          - If the owner is request node, write data (Exclusive do not need this), and change state to be Invalid
- *              + Return ack to the requestor
+ *      x This cache block is Modified
+ *          o If the owner is request node, write data (Exclusive do not need this), and change state to be Invalid - MOVED TO INVALIDATION
+ *              + Return ack to the requestor 
  *          - If the owner is other nodes
- *              + If there are sharers
- *                  # If the requestor is one of sharers, return non-ack response
- *                  # If the requestor is not one of sharers, forward the request to the owner
- *              + If there aren't sharers, forward the request to the owner
- *      * This cache block is Shared-no-data
- *          - If the dest is current node, Copy data to the directory and change to Invalid state
- *          - Else, return non-ack response
- *      * This cache block is Invalid
+ *              + If the requestor is one of sharers, return non-ack response
+ *              + If the requestor is not one of sharers or there aren't sharers, forward the request to the owner
+ *      x This cache block is Shared-no-data
+ *          - Return non-ack response
+ *      x This cache block is Invalid
  *          - Change state to modified state, setup owner, and return data with exclusive
  *
  *  4. Write request (forwarded request)
- *      * Access the cache
+ *      x Access the cache
  *          - If cache miss,
  *              + If it is in victim buffer, return data to the source
  *              + else, return non-ack response to the source
  *          - If cache hit, return data directly to the source (Downgrade to Invalid) and send ack to directory
  *
  *  5. Invalidation request
- *      * No directory access
- *      * Modify cache state and return ack response (No matter whether it hit or not)
+ *      x No directory access
+ *      x Modify cache state and return ack response (No matter whether it hit or not)
  *
  *  TODO: New queue on network (Forward Queue) / New internal queue (Send-Forward Queue and Send-reply Queue)
  *
@@ -362,38 +400,427 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  * @return Success or not
  */
 bool iu_t::process_net_request(net_cmd_t net_cmd) {
+    net_cmd_t original_net_cmd = net_cmd;
     proc_cmd_t pc = net_cmd.proc_cmd;
 
     int lcl = gen_local_cache_line(pc.addr);
     int src = net_cmd.src;
     int dest = net_cmd.dest;
 
-    // ***** FYTD *****
-    // sanity check
-    // TODO: Forward request don't need this line
-    if (gen_node(pc.addr) != node) ERROR("sent to wrong home site!");
+    if (gen_node(pc.addr) == node) { 
+        /* not forwarded requests
+            - depending on dir[lcl] states        
+        */
+        switch (pc.busop) {
+            case READ: {
+                if (dir[lcl].state == DIR_SHARED) {
+                    // Return the data in the memory and update sharer list
+                    dir[lcl].shared_nodes |= (1 << src);
+                    
+                    net_cmd.dest = src;
+                    net_cmd.src = node;
+                    copy_cache_line(pc.data, mem[lcl]);
+                    net_cmd.proc_cmd = pc;
+                    net_cmd.valid_p = 1;
 
-    switch (pc.busop) {
-        case READ: // assume local
-            // TODO: Transient state change in directory
-            // TODO: Probe cache line
+                    bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    while (!enqueue_status) {
+                        // REPLY queue has the highest priority
+                        enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    } 
+
+                } else if (dir[lcl].state == DIR_SHARED_NO_DATA) {
+                    // Forward request to the owner
+                    // the src remains the same, the dest changes to the actural owner
+                    net_cmd.dest = dir[lcl].owner;
+
+                    bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
+                    while (!enqueue_status) {
+                        enqueue_status = net->to_net(node, FORWARD, net_cmd);
+                    } 
+
+                } else if (dir[lcl].state == DIR_OWNED) {
+                    if (node == dir[lcl].owner) {
+                        // If the owner is current node, 
+                        // access the cache to get the newest copy, downgrade the cache state,
+                        // change the directory state to be Shared, and update sharer list.
+
+                        forward_cmd_p = true;
+                        response_t r = cache->snoop(net_cmd);
+                        // can't return the data back for now
+                        // have to access cache for data
+                        forward_cmd_p = false;
+
+                        if(!r.hit_p) {
+                            ERROR_ARGS(("The owner %d lost the cache line for addr %d\n", node, pc.addr));
+                        }
+
+                        dir[lcl].state == DIR_SHARED;
+                        dir[lcl].shared_nodes |= (1 << src);  
+
+                        copy_cache_line(pc.data, forward_net_cmd.data);
+                        pc.permit_tag = SHARED;
+                        pc.busop = WRITE;
+                        net_cmd.proc_cmd = pc;
+
+                        net_cmd.dest = src; // reply to the requestor with data
+                        net_cmd.src = node;
+
+                        bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                        while (!enqueue_status) {
+                            // REPLY queue has the highest priority
+                            enqueue_status = net->to_net(node, REPLY, net_cmd);
+                        }            
+
+                        net_cmd.dest = gen_node(pc.addr); // reply to the dir with data
+
+                        enqueue_status = net->to_net(node, REPLY, net_cmd);
+                        while (!enqueue_status) {
+                            // REPLY queue has the highest priority
+                            enqueue_status = net->to_net(node, REPLY, net_cmd);
+                        } 
+
+                    } else {
+                        // If the owner is other nodes, 
+                        // change state to be Shared-no-data, 
+                        // update the sharer list, and forward the request to the owner
+
+                        dir[lcl].state == DIR_SHARED_NO_DATA;
+                        dir[lcl].shared_nodes |= (1 << src);  
+
+                        // the src remains the same, the dest changes to the actural owner
+                        net_cmd.dest = dir[lcl].owner;
+
+                        bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
+                        while (!enqueue_status) {
+                            enqueue_status = net->to_net(node, FORWARD, net_cmd);
+                        } 
+
+                    }
+                } else { // dir[lcl].state == INVALID
+                    
+                    // first time request, change dir state to OWNED, reply with EXCLUSIVE
+                    dir[lcl].shared_nodes = (1 << src);
+                    dir[lcl].owner = src;
+                    dir[lcl].state == DIR_OWNED;
+
+                    pc.permit_tag = EXCLUSIVE;
+                    net_cmd.dest = src;
+                    net_cmd.src = node;
+                    copy_cache_line(pc.data, mem[lcl]);
+                    net_cmd.proc_cmd = pc;
+                    net_cmd.valid_p = 1;
+
+                    bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    while (!enqueue_status) {
+                        // REPLY queue has the highest priority
+                        enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    } 
+                }
+                break;
+            }
+
+            case WRITE: {
+                if (dir[lcl].state == DIR_SHARED) {
+                    // first check the capacity of the local inv queue
+                    if (to_net_inv_q.space() < count_bits(dir[lcl].shared_nodes) - 1) {
+                        
+                        // no-ack the src node (net_cmd.valid_p = 0)
+                        net_cmd.valid_p = 0;
+
+                    } else {
+                        // Change the block to be Modified state
+                        dir[lcl].state = DIR_OWNED;
+
+                        // Send invalidation requests until all the sharers acknowledge
+                        for (int i_node = 0; i_node < 32; i_node++) {
+                            if ((dir[lcl].shared_nodes >> i_node) & 0x1) {
+                                if (i_node != src) {
+                                    // don't send invalidates to the src if it is in the sharer list
+                                    net_cmd_t net_cmd;
+                                    net_cmd.src = src; // we need to know who is the requestor
+                                    net_cmd.dest = i_node;
+                                    pc.busop = INVALIDATE;
+                                    net_cmd.proc_cmd = pc;  
+
+                                    // enqueue to the local queue for invalidations
+                                    to_net_inv_q.push_back(net_cmd); 
+                                }
+                            }
+                        }
+                        // ack the src node (net_cmd.valid_p = 1)
+                        net_cmd.valid_p = 1;
+                    }
+                    
+                    // reply to the src node
+                    net_cmd.dest = src;
+                    net_cmd.src = node;
+                    net_cmd.proc_cmd = pc;
+
+                    bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    while (!enqueue_status) {
+                        // REPLY queue has the highest priority
+                        enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    } 
+
+                } else if (dir[lcl].state == DIR_SHARED_NO_DATA) {
+                    
+                    // reply to the src node (requestor) with no-ack (net_cmd.valid_p = 0)
+                    net_cmd.valid_p = 0;
+
+                    net_cmd.dest = src;
+                    net_cmd.src = node;
+                    net_cmd.proc_cmd = pc;
+
+                    bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    while (!enqueue_status) {
+                        // REPLY queue has the highest priority
+                        enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    } 
+
+                } else if (dir[lcl].state == DIR_OWNED) {
+                    if (src == dir[lcl].owner) {
+                        ERROR("should not see this proc request, the node is already the owner");
+
+                    } else if ((dir[lcl].shared_nodes >> src) & 0x1) {
+                        // the requestor is one of sharers
+                        // reply to the src node (requestor) with no-ack (net_cmd.valid_p = 0)
+                        net_cmd.valid_p = 0;
+
+                        net_cmd.dest = src;
+                        net_cmd.src = node;
+                        net_cmd.proc_cmd = pc;
+
+                        bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                        while (!enqueue_status) {
+                            // REPLY queue has the highest priority
+                            enqueue_status = net->to_net(node, REPLY, net_cmd);
+                        }                     
+                    } else {
+                        // the requestor is not one of sharers, forward the request to the owner
+                        // the src remains the same, the dest changes to the actural owner
+                        net_cmd.dest = dir[lcl].owner;
+
+                        bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
+                        while (!enqueue_status) {
+                            enqueue_status = net->to_net(node, FORWARD, net_cmd);
+                        } 
+                    }
+                } else { // dir[lcl].state == INVALID
+                    
+                    // first time request, change dir state to OWNED, reply with EXCLUSIVE
+                    dir[lcl].shared_nodes = (1 << src);
+                    dir[lcl].owner = src;
+                    dir[lcl].state == DIR_OWNED;
+
+                    pc.permit_tag = EXCLUSIVE;
+                    net_cmd.dest = src;
+                    net_cmd.src = node;
+                    copy_cache_line(pc.data, mem[lcl]);
+                    net_cmd.proc_cmd = pc;
+                    net_cmd.valid_p = 1;
+
+                    bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    while (!enqueue_status) {
+                        // REPLY queue has the highest priority
+                        enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    } 
+                }
+                break;
+            }
+            case INVALIDATE:   
+                ERROR_ARGS(("Dir %d received invalidates from node %d", node, src));
+                break;  
+
+            case WRITEBACK:
+                ERROR_ARGS(("Node %d: Writebacks shouldn't be in the request queue", node));           
+                break;
+        }      
+    } else { 
+        // gen_node(pc.addr) != node
+        // invalidates
+        if (pc.busop == INVALIDATE) {
+            response_t r = cache->snoop(net_cmd);
+
+            // reply to the src node (the dir)
             net_cmd.dest = src;
-            net_cmd.src = dest;
-            copy_cache_line(pc.data, mem[lcl]);
+            net_cmd.src = node;
             net_cmd.proc_cmd = pc;
 
+            bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+            while (!enqueue_status) {
+                // REPLY queue has the highest priority
+                enqueue_status = net->to_net(node, REPLY, net_cmd);
+            } 
+        } else {
+            ERROR("REQUEST queue (if not INVALIDATES) should always satisfy gen_node(pc.addr) == node");
+        }
+    }
+}
 
-            return (net->to_net(node, REPLY, net_cmd));
+bool iu_t::process_net_forward(net_cmd_t net_cmd) {
+    net_cmd_t original_net_cmd = net_cmd;
+    proc_cmd_t pc = net_cmd.proc_cmd;
 
-        case WRITE:
-            // TODO: Reply with write acknowledge
-            copy_cache_line(mem[lcl], pc.data);
-            return (false);
+    int lcl = gen_local_cache_line(pc.addr);
+    int src = net_cmd.src;
+    int dest = net_cmd.dest;
 
-        case INVALIDATE:
-            // ***** FYTD *****
-            // TODO: Invalidation from other nodes (Reply with invalidation acknowledge)
-            return (false);  // need to return something for now
+    if (gen_node(pc.addr) != node) { 
+        switch (pc.busop) {
+            case (READ): {
+                forward_cmd_p = true;
+                response_t r = cache->snoop(net_cmd);
+                // can't return the data back for now
+                // have to access cache for data
+                forward_cmd_p = false;
+                if(!r.hit_p) {
+                    // if cache miss, return non-ack response to the source
+                    NOTE_ARGS(("The owner %d has lost the cache line for addr %d\n", node, pc.addr));
+                    
+                    net_cmd.valid_p = 0;
+                    net_cmd.dest = src; 
+                    net_cmd.src = node;
+                    
+                    bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    while (!enqueue_status) {
+                        // REPLY queue has the highest priority
+                        enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    }   
+                } else {
+                    // if hit
+                    // - If cache block is modified/exclusive, return data directly to directory (Update sharer list) 
+                    //   and source
+                    // - If cache block is shared, return data to the source
+
+                    net_cmd.valid_p = 1;
+                    
+                    copy_cache_line(pc.data, forward_net_cmd.data);
+                    pc.permit_tag = SHARED;
+                    pc.busop = WRITE;
+                    net_cmd.proc_cmd = pc;
+                    
+                    // reply to the requestor with data
+                    net_cmd.dest = src; 
+                    net_cmd.src = node;
+                    
+                    bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    while (!enqueue_status) {
+                        // REPLY queue has the highest priority
+                        enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    }       
+
+                    if (forward_net_cmd.permit_tag == MODIFIED || forward_net_cmd.permit_tag == EXCLUSIVE) {
+                        // reply to the dir with data
+                        net_cmd.dest = gen_node(pc.addr); 
+
+                        bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                        while (!enqueue_status) {
+                            // REPLY queue has the highest priority
+                            enqueue_status = net->to_net(node, REPLY, net_cmd);
+                        }
+                    }
+                }
+                break;
+            }
+
+            case (WRITE): {
+                forward_cmd_p = true;
+                response_t r = cache->snoop(net_cmd);
+                // can't return the data back for now
+                // have to access cache for data
+                forward_cmd_p = false;
+                if(!r.hit_p) {
+                    // if cache miss, return non-ack response to the source
+                    NOTE_ARGS(("The owner %d has lost the cache line for addr %d\n", node, pc.addr));
+                    
+                    net_cmd.valid_p = 0;
+                    net_cmd.dest = src; 
+                    net_cmd.src = node;
+                    
+                    bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    while (!enqueue_status) {
+                        // REPLY queue has the highest priority
+                        enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    }
+                } else {
+                    // if hit
+                    // - return data to directory (Update sharer list) and source
+
+                    net_cmd.valid_p = 1;
+                    
+                    copy_cache_line(pc.data, forward_net_cmd.data);
+                    pc.permit_tag = MODIFIED;
+                    pc.busop = WRITE;
+                    net_cmd.proc_cmd = pc;
+                    
+                    // reply to the requestor with data
+                    net_cmd.dest = src; 
+                    net_cmd.src = node;
+                    
+                    bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    while (!enqueue_status) {
+                        // REPLY queue has the highest priority
+                        enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    }       
+
+                    // reply to the dir with data
+                    net_cmd.dest = gen_node(pc.addr); 
+
+                    enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    while (!enqueue_status) {
+                        // REPLY queue has the highest priority
+                        enqueue_status = net->to_net(node, REPLY, net_cmd);
+                    }
+                }
+                break;
+            }
+
+            case (INVALIDATE):
+                ERROR_ARGS(("Node %d: Invalidation shouldn't be in the forward queue", node));
+                break;
+            case (WRITEBACK):
+                ERROR_ARGS(("Node %d: Writebacks shouldn't be in the forward queue", node));           
+                break;
+        }
+    
+    } else {
+        ERROR("FORWARD queue should satisfy gen_node(pc.addr) != node")
+    }
+}
+
+bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
+    net_cmd_t original_net_cmd = net_cmd;
+    proc_cmd_t pc = net_cmd.proc_cmd;
+
+    int lcl = gen_local_cache_line(pc.addr);
+    int src = net_cmd.src;
+    int dest = net_cmd.dest;
+
+    if (pc.busop == WRITEBACK) {
+        if (gen_node(pc.addr) == node) { 
+            // write back
+            // no reply generated
+
+            if (dir[lcl].state == DIR_SHARED) {
+                // shared: update sharer list
+                uint temp = ~(1 << src);
+                dir[lcl].shared_nodes &= temp;
+
+            } else if (dir[lcl].state == DIR_OWNED) {
+                // owned: copy the data into memory and change directory state to be Invalid
+                if (dir[lcl].owner != src) {
+                    ERROR_ARGS(("Non-owner write-back: owner %d, node %d\n", dir[lcl].owner, node));
+                }
+                copy_cache_line(mem[lcl], pc.data);
+                dir[lcl].state = DIR_INVALID;
+                dir[lcl].shared_nodes = 0;
+            }    
+        } else {
+            ERROR("WRITEBACK queue should satisfy gen_node(pc.addr) == node");
+        }
+    } else {
+        ERROR("WRITEBACK queue should only contain WRITE BACK bus ops");
     }
 }
 
@@ -402,53 +829,103 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
  *
  * Network request (Based on different bus tag)
  *  1. Invalidation request ack
- *      * Update sharer list (1 -> 0)
+ *      x Update sharer list (1 -> 0)
+ *      x End the processor command when all invalidations acked
  *  2. Read request ack (Not forwarded request)
- *      * Fill cache (may trigger replacement write back)
- *      * End the processor command processing signal
+ *      x Fill cache (may trigger replacement write back)
+ *      x End the processor command processing signal
  *  3. Invalidation request non-ack (Impossible)
- *      * Retry
+ *      x Retry
  *  4. Write request ack (Not forwarded request)
- *      * Write back
- *          - Evict the victim
- *      * Not Write back
+ *      x Write back
+ *          - Evict the victim (Not implemented, no ack expected)
+ *      x Not Write back
  *          - Fill cache (may trigger replacement write back)
  *          - End the processor command processing signal
  *  5. Read request non-ack
- *      * Retry (Need proc do again)
+ *      x Retry (Need proc do again)
  *  6. Write request non-ack
- *      * Retry (Need proc do again)
+ *      x Retry (Need proc do again)
  *  7. Write request ack (forwarded request)
- *      * Update owner id
+ *      x Update owner id
  *  8. Read request ack (forwarded request)
- *      * Fill memory
- *      * Change state from Shared-no-data/Invalid to Shared and update sharer list
+ *      x Fill memory
+ *      x Change state from Shared-no-data/Invalid to Shared and update sharer list
  *
  * @param net_cmd Network command
  * @return Success or not
  */
 bool iu_t::process_net_reply(net_cmd_t net_cmd) {
     proc_cmd_t pc = net_cmd.proc_cmd;
+    int lcl = gen_local_cache_line(pc.addr);
 
-    // ***** FYTD *****
+    bool forwarded = (node == gen_node(pc.addr)); // 1: forwarded, 0: not forwarded
 
-    // TODO: Cannot finish processor request in one reply (Sharers invalidation)
-    proc_cmd_p = false; // clear out request that this reply is a reply to
-
-    // TODO: Support retry based on reply (proc_cmd_processed_p = false)
     switch (pc.busop) {
-        case READ: // assume local
-            // Deal with read request
-            // TODO: Transient state change in directory
-            cache->reply(pc);
-            return (false);
+        case (READ): {
+            if (!net_cmd.valid_p) {
+                // retry
+                proc_cmd_processed_p = false;
 
-        case WRITE:
-        case INVALIDATE:
-            // TODO: Invalidation or write acknowledge
-            // TODO: Transient state change in directory
-        ERROR("should not have gotten a reply back from a write or an invalidate, since we are incoherent");
-            return (false);  // need to return something for now
+            } else if (forwarded) {
+                // Read request ack (forwarded request)
+                // Fill memory
+                // Change state from Shared-no-data/Invalid to Shared and update sharer list
+                copy_cache_line(mem[lcl], pc.data);
+                dir[lcl].state = DIR_SHARED;
+                dir[lcl].shared_nodes |= (1 << net_cmd.src);  
+
+            } else {
+                // Read request ack (Not forwarded request)
+                // Fill cache (may trigger replacement write back)
+                // End the processor command processing signal
+                cache->reply(pc);
+                proc_cmd_p = false; // clear proc_cmd
+            }
+            break;
+        }
+        case (WRITE): {
+            if (!net_cmd.valid_p) {
+                // retry
+                proc_cmd_processed_p = false;
+
+            } else if (forwarded) {
+                // Write request ack (forwarded request)
+                // Update owner id
+                dir[lcl].state = DIR_OWNED;
+                dir[lcl].owner = net_cmd.src;
+                dir[lcl].shared_nodes = (1 << net_cmd.src);  
+
+            } else {
+                // Write request ack (Not forwarded request)
+                //   - Fill cache (may trigger replacement write back)
+                //   - End the processor command processing signal
+                cache->reply(pc);
+                proc_cmd_p = false; // clear proc_cmd
+            }
+            break;
+        }
+        case (WRITEBACK):
+            ERROR_ARGS(("Node: %d No WRITEBACK ACK expected for current implementation!", node));
+            break;
+
+        case (INVALIDATE): {
+            if (!net_cmd.valid_p) {
+                ERROR_ARGS(("Node: %d No INVALIDATION NO-ACK expected for current implementation!", node));
+
+            } else {
+                // Update sharer list
+                uint temp = ~(1 << net_cmd.src);
+                dir[lcl].shared_nodes &= temp;   
+
+                // End the processor command when all invalidations acked
+                if ((dir[lcl].shared_nodes == 0) || (dir[lcl].shared_nodes == (1 << net_cmd.src))) {
+                    cache->reply(pc); // now modified granted
+                    proc_cmd_p = false; // clear proc_cmd
+                }
+            }
+            break;
+        }
     }
 }
 

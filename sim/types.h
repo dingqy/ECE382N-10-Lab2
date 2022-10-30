@@ -17,6 +17,8 @@ const int NUM_PRIORITIES = 2;
 
 const int NETWORK_LATENCY = 10;
 
+const int SIZE_INV_QUEUE = 32;
+
 typedef unsigned int uint;
 
 typedef uint address_t;      // cannot be addr_t because cygwin defines
@@ -25,10 +27,10 @@ typedef enum {
     INVALID, SHARED, EXCLUSIVE, MODIFIED
 } permit_tag_t;
 typedef enum {
-    READ, WRITE, INVALIDATE
+    READ, WRITE, INVALIDATE, WRITEBACK
 } busop_t;
 typedef enum {
-    REPLY = 0, REQUEST
+    REPLY = 0, WRBACK, FORWARD, REQUEST
 } pri_t;
 typedef int replacement_t;
 typedef int bus_tag_t;
@@ -45,7 +47,7 @@ typedef struct {
 extern args_t args;
 
 typedef enum {
-    DIR_INVALID, DIR_SHARED, DIR_OWNED, DIR_SHARED_NO_DATA
+    DIR_INVALID, DIR_SHARED_NO_DATA, DIR_SHARED, DIR_OWNED
 } dir_state_t;
 
 typedef struct {
@@ -81,6 +83,8 @@ typedef struct {
 
     proc_cmd_t proc_cmd;
 } net_cmd_t;
+
+typedef proc_cmd_t forward_cmd_t;
 
 extern int cur_cycle;
 extern int cache_line_size;

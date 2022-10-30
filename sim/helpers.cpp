@@ -94,4 +94,15 @@ char *PRI2STRING(pri_t pri) {
     }
 }
 
+bool check_onehot(uint num) {
+    return num && !(num & (num-1));
+}
 
+bool count_bits(uint num) {
+    uint count = 0;
+    while (num) {
+        count += num & 0x1;
+        num >>= 1;
+    }
+    return count;
+}
