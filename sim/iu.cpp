@@ -201,7 +201,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
                     // temporarily set dir state to DIR_SHARED_NO_DATA
                     // in case write requests come and we need to send invalidates
-                    dir[lcl].state == DIR_SHARED_NO_DATA;
+                    dir[lcl].state = DIR_SHARED_NO_DATA;
                     dir[lcl].shared_nodes |= (1 << node);
 
                     // no cache reply for now
@@ -220,7 +220,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     // first time request, change cache state to modified and setup owner
                     dir[lcl].shared_nodes = (1 << node);
                     dir[lcl].owner = node;
-                    dir[lcl].state == DIR_OWNED;
+                    dir[lcl].state = DIR_OWNED;
                     pc.permit_tag = EXCLUSIVE;
                     copy_cache_line(pc.data, mem[lcl]);
 
@@ -457,7 +457,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                             ERROR_ARGS(("The owner %d lost the cache line for addr %d\n", node, pc.addr));
                         }
 
-                        dir[lcl].state == DIR_SHARED;
+                        dir[lcl].state = DIR_SHARED;
                         dir[lcl].shared_nodes |= (1 << src);
 
                         copy_cache_line(pc.data, forward_net_cmd.data);
@@ -487,7 +487,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         // change state to be Shared-no-data, 
                         // update the sharer list, and forward the request to the owner
 
-                        dir[lcl].state == DIR_SHARED_NO_DATA;
+                        dir[lcl].state = DIR_SHARED_NO_DATA;
                         dir[lcl].shared_nodes |= (1 << src);
 
                         // the src remains the same, the dest changes to the actural owner
@@ -613,7 +613,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                     // first time request, change dir state to OWNED, reply with EXCLUSIVE
                     dir[lcl].shared_nodes = (1 << src);
                     dir[lcl].owner = src;
-                    dir[lcl].state == DIR_OWNED;
+                    dir[lcl].state = DIR_OWNED;
 
                     pc.permit_tag = EXCLUSIVE;
                     net_cmd.dest = src;
