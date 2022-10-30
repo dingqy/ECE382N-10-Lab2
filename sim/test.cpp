@@ -111,12 +111,12 @@ void init_test() {
             break;
         case 7:
             test_args[0].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
-            test_args[0].test_cases.emplace_back(2, test_case_t{false, 0x00002001, 0x0});
-            test_args[0].test_cases.emplace_back(4, test_case_t{false, 0x00004001, 0x0});
-            test_args[0].test_cases.emplace_back(6, test_case_t{false, 0x00006001, 0x0});
-            test_args[0].test_cases.emplace_back(8, test_case_t{false, 0x00008001, 0x0});
-            test_args[1].test_records.emplace_back(19, test_record_t{false, 0x00000001});
-            test_args[1].test_goldens.emplace_back(19,
+            test_args[0].test_cases.emplace_back(30, test_case_t{false, 0x00002001, 0x0});
+            test_args[0].test_cases.emplace_back(32, test_case_t{false, 0x00004001, 0x0});
+            test_args[0].test_cases.emplace_back(34, test_case_t{false, 0x00006001, 0x0});
+            test_args[0].test_cases.emplace_back(36, test_case_t{false, 0x00008001, 0x0});
+            test_args[1].test_records.emplace_back(50, test_record_t{false, 0x00000001});
+            test_args[1].test_goldens.emplace_back(50,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
             break;
         case 8:
