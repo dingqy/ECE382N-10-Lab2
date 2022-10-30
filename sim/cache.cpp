@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "cache.h"
+#include "helpers.h"
 #include "iu.h"
 
 /**
@@ -213,12 +214,11 @@ void cache_t::write_data(address_t addr, cache_access_response_t car, int data) 
     tags[car.set][car.way].data[offset] = data;
 }
 
-cache_access_response_t cache_t::lru_replacement(address_t addr, bool& replaced) {
+cache_access_response_t cache_t::lru_replacement(address_t addr) {
     cache_access_response_t car;
 
     // already in the cache?
     if (cache_access(addr, INVALID, &car)) {
-        replaced = 0;
         return (car);
     }
 
@@ -233,14 +233,12 @@ cache_access_response_t cache_t::lru_replacement(address_t addr, bool& replaced)
     for (int a = 0; a < assoc; ++a) {
         if (tags[set][a].replacement == -1) {
             car.way = a;
-            replaced = 0;   
             return (car);
         } else if (tags[set][a].replacement == 0) {
             done_p = true;
             car.way = a;
         }
     }
-    replaced = 1; 
     if (done_p) return (car);
 
     ERROR("should be a way that is LRU");
@@ -422,19 +420,85 @@ void cache_t::reply(proc_cmd_t proc_cmd) {
     // fill cache, return to processor
 
     bool replaced_wb = 0;
-    cache_access_response_t car = lru_replacement(proc_cmd.addr, replaced_wb);
+    cache_access_response_t car = lru_replacement(proc_cmd.addr);
 
     NOTE_ARGS(("%d: replacing addr_tag %d into set %d, assoc %d", node, car.address_tag, car.set, car.way));
 
     // TODO: Write back replacement cache line
+    if (cache_access(proc_cmd.addr, INVALID, &car)) {
+        // already in the cache
+        replaced_wb = 0;
+
+    } else if (tags[car.set][car.way].replacement == -1) {
+        // the evicted line is invalid, no need to write back
+        replaced_wb = 0;
+    } else {
+        replaced_wb = 1;
+    }
     if (replaced_wb) {
         uint replaced_addr = ((tags[car.set][car.way].address_tag) << address_tag_shift) | (car.set << set_shift);
-        proc_cmd_t proc_cmd = (proc_cmd_t) {INVALIDATE, replaced_addr, 0xFFFF, car.permit_tag};
+        proc_cmd_t proc_cmd = (proc_cmd_t) {WRITEBACK, replaced_addr, 0xFFFF, car.permit_tag};
         iu->from_proc(proc_cmd);
     }
 
     car.permit_tag = proc_cmd.permit_tag;
     cache_fill(car, proc_cmd.data);
 
+}
+
+/**
+ * Notify the cache from Intersection Unit for network request
+ *
+ * if INVALIDATE bus op, invalidate itself
+ * if READ/WRITE bus op, demote/evict accordingly and provide modified data
+ * 
+ * @param net_cmd Network request
+ */
+response_t cache_t::snoop(net_cmd_t net_cmd) {
+
+    proc_cmd_t new_pc = net_cmd.proc_cmd;
+    
+    response_t resp;
+    cache_access_response_t car;
+
+    resp.retry_p = false; //TODO: Not sure about retry_p
+
+    if (cache_access(new_pc.addr, INVALID, &car)) {
+        // hit
+        resp.hit_p = true;
+        if (new_pc.busop == INVALIDATE) {
+            // invalidate itself
+            tags[car.way][car.set].permit_tag = INVALID;
+            tags[car.way][car.set].replacement = -1;
+            NOTE_ARGS(("Node %d cache saw INVALIDATE request from node %d at addr %d, invalidated itself", node, net_cmd.src, new_pc.addr));           
+        
+        } else if (new_pc.busop == WRITE) {
+            // a forwarded write request
+            copy_cache_line(new_pc.data, tags[car.set][car.way].data);
+            iu->from_proc(new_pc); 
+
+            // invalidate itself
+            tags[car.way][car.set].permit_tag = INVALID;
+            tags[car.way][car.set].replacement = -1;
+            NOTE_ARGS(("Node %d cache saw WRITE request from node %d at addr %d, invalidated itself", node, net_cmd.src, new_pc.addr));
+
+        } else if (new_pc.busop == READ) {
+            // a forwarded read request
+            copy_cache_line(new_pc.data, tags[car.set][car.way].data);
+            iu->from_proc(new_pc); 
+            
+            // downgrade itself
+            tags[car.way][car.set].permit_tag = SHARED;
+            NOTE_ARGS(("Node %d cache saw READ request from node %d at addr %d, this is unnecessary traffic", node, net_cmd.src, new_pc.addr));
+        } else {
+            ERROR_ARGS(("Illegal bus op type seen at node %d", node));
+        }
+    } else {
+        // miss
+        NOTE_ARGS(("Node %d cache missed when seeing %d request from node %d at addr %d", node, new_pc.busop, net_cmd.src, new_pc.addr));
+        resp.hit_p = false;
+    } 
+
+    return resp;
 }
 

@@ -36,15 +36,23 @@ class iu_t {
 
     // network side
     bool process_net_request(net_cmd_t net_cmd);
-
+    bool process_net_writeback(net_cmd_t net_cmd);
+    bool process_net_forward(net_cmd_t net_cmd);    
     bool process_net_reply(net_cmd_t net_cmd);
 
     // directory
     dir_t dir[MEM_SIZE];
 
     // queue: node -> network
-    my_fifo_t<net_cmd_t> to_net_req_q;
+    my_fifo_t <net_cmd_t> to_net_inv_q;
 
+    // for foward network requests
+    bool forward_cmd_p;
+    forward_cmd_t forward_net_cmd;
+
+    // for retry
+    bool  proc_cmd_retry_p;
+    
 
 public:
     iu_t(int __node);
