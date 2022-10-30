@@ -67,7 +67,7 @@ void init_test() {
             test_args[0].test_records.emplace_back(1, test_record_t{false, 0x00000001});
             test_args[0].test_goldens.emplace_back(1,
                                                    test_result_t{MODIFIED, DIR_INVALID, 0x00000001, 0x100, 0x0, 0x0});
-            test_args[1].test_goldens.emplace_back(1, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x1, 0x0, 0x0});
+            test_args[0].test_goldens.emplace_back(1, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x1, 0x0, 0x0});
             break;
         case 4:
             for (int &i: init_temp) {
@@ -87,15 +87,15 @@ void init_test() {
             test_args[0].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
             test_args[2].test_cases.emplace_back(21, test_case_t{false, 0x00000101, 0x0});
 
-            test_args[1].test_records.emplace_back(31, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(31, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x0, 0x0,
+            test_args[1].test_records.emplace_back(32, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(32, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x0, 0x0,
                                                                      0x0});
 
-            test_args[0].test_records.emplace_back(41, test_record_t{true, 0x00010001});
-            test_args[0].test_goldens.emplace_back(41, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
+            test_args[0].test_records.emplace_back(42, test_record_t{true, 0x00000101});
+            test_args[0].test_goldens.emplace_back(42, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
 
-            test_args[1].test_records.emplace_back(52, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(52, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x100, 0x3, 0x0});
+            test_args[1].test_records.emplace_back(54, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(54, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x100, 0x3, 0x0});
             test_args[2].test_records.emplace_back(53, test_record_t{true, 0x00000101});
             test_args[2].test_goldens.emplace_back(53, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
             break;
