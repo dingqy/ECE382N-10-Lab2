@@ -117,7 +117,7 @@ void init_test() {
             test_args[0].test_cases.emplace_back(8, test_case_t{false, 0x00008001, 0x0});
             test_args[1].test_records.emplace_back(19, test_record_t{false, 0x00000001});
             test_args[1].test_goldens.emplace_back(19,
-                                                   test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x100, 0x0, 0x0});
+                                                   test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
             break;
         case 8:
             test_args[0].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
