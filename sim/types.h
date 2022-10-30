@@ -84,6 +84,12 @@ typedef struct {
     proc_cmd_t proc_cmd;
 } net_cmd_t;
 
+typedef struct {
+    bool valid;
+    pri_t pri;
+    net_cmd_t net_cmd;
+} iu_net_buffer_t;
+
 typedef proc_cmd_t forward_cmd_t;
 
 extern int cur_cycle;
