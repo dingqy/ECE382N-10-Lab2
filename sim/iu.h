@@ -53,7 +53,7 @@ class iu_t {
     bool  proc_cmd_retry_p;
 
     // buffers to queues
-    iu_net_buffer_t net_buffer;
+    iu_net_buffer_t net_buffer[1]; // possible to enqueue 2 net_cmd per cycle
     
 
 public:

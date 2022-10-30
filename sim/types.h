@@ -18,6 +18,7 @@ const int NUM_PRIORITIES = 4;
 const int NETWORK_LATENCY = 10;
 
 const int SIZE_INV_QUEUE = 32;
+const int SIZE_IU_TO_NET_BUFFER = 2;
 
 typedef unsigned int uint;
 
@@ -27,7 +28,7 @@ typedef enum {
     INVALID, SHARED, EXCLUSIVE, MODIFIED
 } permit_tag_t;
 typedef enum {
-    READ, WRITE, INVALIDATE, WRITEBACK
+    READ, WRITE, INVALIDATE
 } busop_t;
 typedef enum {
     REPLY = 0, WRBACK, FORWARD, REQUEST
