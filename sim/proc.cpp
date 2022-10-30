@@ -174,10 +174,11 @@ void proc_t::advance_one_cycle() {
                     }
                 }
             }
+            break;
         default: ERROR("don't know this test case");
     }
 
-    if (record_index < test_set.test_records.size()) {
+    while (record_index < test_set.test_records.size()) {
         int address = test_set.test_records[record_index].second.address;
         if (cur_cycle == test_set.test_records[record_index].first) {
             if (test_set.test_records[record_index].second.mem_cache) {
@@ -196,6 +197,8 @@ void proc_t::advance_one_cycle() {
                                                                         temp.owner});
             }
             record_index += 1;
+        } else {
+            break;
         }
     }
 }

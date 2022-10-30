@@ -70,10 +70,12 @@ void iu_t::advance_one_cycle() {
     }
 
     // enqueue network REQUEST
-    net_cmd_t inv_net_cmd = to_net_inv_q.dequeue();
-    bool enqueue_status = net->to_net(node, REQUEST, inv_net_cmd);
-    if (!enqueue_status) {
-        to_net_inv_q.push_front(inv_net_cmd);
+    if (!to_net_inv_q.empty()) {
+        net_cmd_t inv_net_cmd = to_net_inv_q.dequeue();
+        bool enqueue_status = net->to_net(node, REQUEST, inv_net_cmd);
+        if (!enqueue_status) {
+            to_net_inv_q.push_front(inv_net_cmd);
+        }
     }
 }
 
@@ -164,7 +166,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     // first time request, change cache state to exclusive and setup sharer list
                     dir[lcl].shared_nodes = (1 << node);
                     dir[lcl].owner = node;
-                    dir[lcl].state == DIR_OWNED;
+                    dir[lcl].state = DIR_OWNED;
 
                     copy_cache_line(pc.data, mem[lcl]);
                     pc.permit_tag = EXCLUSIVE;

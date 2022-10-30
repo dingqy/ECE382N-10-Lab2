@@ -90,6 +90,10 @@ char *PRI2STRING(pri_t pri) {
             return ((char *) "REQUEST");
         case REPLY:
             return ((char *) "REPLY");
+        case WRBACK:
+            return ((char *) "WRBACK");
+        case FORWARD:
+            return ((char *) "FORWARD");
         default: ERROR("don't know this pri");
     }
 }

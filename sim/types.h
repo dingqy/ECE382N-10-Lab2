@@ -13,7 +13,7 @@ const int ADDR_SIZE = 32;
 const int CACHE_LINE_SIZE = 16;    // needs to be consistent with LG_CACHE_LINE_SIZE
 const int LG_CACHE_LINE_SIZE = 4;  // needs to be consistent with CACHE_LINE_SIZE
 const int MEM_SIZE = 1024;
-const int NUM_PRIORITIES = 2;
+const int NUM_PRIORITIES = 4;
 
 const int NETWORK_LATENCY = 10;
 

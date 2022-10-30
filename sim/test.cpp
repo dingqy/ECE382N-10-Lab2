@@ -299,7 +299,7 @@ void finish_test() {
                     }
                 }
                 std::cout << "Passed" << std::endl;
-
+                break;
             default: ERROR("don't recognize this test");
         }
     }
