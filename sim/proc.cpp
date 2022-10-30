@@ -104,6 +104,10 @@ void proc_t::bind(cache_t *c) {
  *
  * Case 15:
  *  - Directory Shared-no-data -> Write request (write back) -> Invalid in directory
+ *  -                                           Read request -> Forward request -> Retry/Resubmit -> Exclusive in cache and owned in directory
+ *
+ * Case 16:
+ *  -
  * --------------------------------------------------------------------------------------------------------------
  */
 void proc_t::advance_one_cycle() {
@@ -134,15 +138,15 @@ void proc_t::advance_one_cycle() {
         case 4:
         case 5:
         case 6:
+        case 7:
+        case 8:
+        case 9:
+        case 10:
         case 11:
         case 12:
         case 13:
         case 14:
         case 15:
-        case 16:
-        case 17:
-        case 18:
-        case 19:
             if (case_index < test_set.test_cases.size()) {
                 if (cur_cycle >= test_set.test_cases[case_index].first) {
                     if (test_set.test_cases[case_index].second.write) {

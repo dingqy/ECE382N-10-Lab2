@@ -267,15 +267,15 @@ void finish_test() {
             case 4:
             case 5:
             case 6:
+            case 7:
+            case 8:
+            case 9:
+            case 10:
             case 11:
             case 12:
             case 13:
             case 14:
             case 15:
-            case 16:
-            case 17:
-            case 18:
-            case 19:
                 std::cout << "Processor: " << i << " Checking..." << std::endl;
                 for (int j = 0; j < test_args[i].test_goldens.size(); j++) {
                     test_result_t test_result = test_args[i].test_results[j].second;
