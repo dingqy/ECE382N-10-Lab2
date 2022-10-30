@@ -438,6 +438,7 @@ void cache_t::reply(proc_cmd_t proc_cmd) {
     if (replaced_wb) {
         uint replaced_addr = ((tags[car.set][car.way].address_tag) << address_tag_shift) | (car.set << set_shift);
         proc_cmd_t proc_cmd = (proc_cmd_t) {WRITE, replaced_addr, 0xFFFF, car.permit_tag};
+        copy_cache_line(proc_cmd.data, tags[car.set][car.way].data);
         iu->from_proc(proc_cmd);
     }
 

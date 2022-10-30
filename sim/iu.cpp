@@ -225,8 +225,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         copy_cache_line(pc.data, mem[lcl]);
                         pc.permit_tag = EXCLUSIVE;
 
-                        cache->reply(pc);
                         proc_cmd_p = false; // clear proc_cmd
+                        cache->reply(pc);
 
                     } else if (dir[lcl].state == DIR_SHARED) {
                         // If it is shared with other nodes, update sharer list
@@ -235,8 +235,9 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         copy_cache_line(pc.data, mem[lcl]);
                         pc.permit_tag = SHARED;
 
-                        cache->reply(pc);
                         proc_cmd_p = false; // clear proc_cmd
+                        cache->reply(pc);
+
                     } else if (dir[lcl].state == DIR_OWNED) {
                         // If it is owned by other nodes, it needs to generate a net_cmd and forward the proc_cmd
                         if (dir[lcl].owner == node) {
@@ -278,8 +279,9 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         pc.permit_tag = EXCLUSIVE;
                         copy_cache_line(pc.data, mem[lcl]);
 
-                        cache->reply(pc);
                         proc_cmd_p = false; // clear proc_cmd
+                        cache->reply(pc);
+
                     } else if (dir[lcl].state == DIR_SHARED) {
 
                         // If it is shared with other nodes, send invalidates to all sharers
@@ -953,8 +955,9 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                 // Read request ack (Not forwarded request)
                 // Fill cache (may trigger replacement write back)
                 // End the processor command processing signal
-                cache->reply(pc);
                 proc_cmd_p = false; // clear proc_cmd
+                cache->reply(pc);
+
             }
             break;
         }
@@ -975,8 +978,9 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                 // Write request ack (Not forwarded request)
                 //   - Fill cache (may trigger replacement write back)
                 //   - End the processor command processing signal
-                cache->reply(pc);
                 proc_cmd_p = false; // clear proc_cmd
+                cache->reply(pc);
+
             }
             break;
         }
@@ -992,8 +996,8 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
 
                 // End the processor command when all invalidations acked
                 if ((dir[lcl].shared_nodes == 0) || (dir[lcl].shared_nodes == (1 << net_cmd.src))) {
-                    cache->reply(pc); // now modified granted
                     proc_cmd_p = false; // clear proc_cmd
+                    cache->reply(pc); // now modified granted
                 }
             }
             break;
