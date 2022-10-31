@@ -40,7 +40,7 @@ void init_test() {
             test_args[0].test_records.emplace_back(1, test_record_t{true, 0x00000001});
             test_args[0].test_records.emplace_back(1, test_record_t{false, 0x00000001});
             test_args[0].test_goldens.emplace_back(1, test_result_t{EXCLUSIVE, DIR_INVALID, 0x00000001, 0x1, 0x0, 0x0});
-            test_args[0].test_goldens.emplace_back(1, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x1, 0x0, 0x0});
+            test_args[0].test_goldens.emplace_back(1, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x1, 0x1, 0x0});
             break;
         case 2:
             for (int &i: init_temp) {
@@ -53,7 +53,7 @@ void init_test() {
             test_args[0].test_records.emplace_back(21, test_record_t{true, 0x00000101});
             test_args[1].test_records.emplace_back(21, test_record_t{false, 0x00000101});
             test_args[0].test_goldens.emplace_back(1, test_result_t{EXCLUSIVE, DIR_INVALID, 0x00000101, 0x1, 0x0, 0x0});
-            test_args[1].test_goldens.emplace_back(1, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x1, 0x0, 0x0});
+            test_args[1].test_goldens.emplace_back(1, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x1, 0x1, 0x0});
             break;
         case 3:
             for (int &i: init_temp) {
@@ -67,7 +67,7 @@ void init_test() {
             test_args[0].test_records.emplace_back(1, test_record_t{false, 0x00000001});
             test_args[0].test_goldens.emplace_back(1,
                                                    test_result_t{MODIFIED, DIR_INVALID, 0x00000001, 0x100, 0x0, 0x0});
-            test_args[0].test_goldens.emplace_back(1, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x1, 0x0, 0x0});
+            test_args[0].test_goldens.emplace_back(1, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x1, 0x1, 0x0});
             break;
         case 4:
             for (int &i: init_temp) {
@@ -81,7 +81,7 @@ void init_test() {
             test_args[1].test_records.emplace_back(21, test_record_t{false, 0x00000101});
             test_args[0].test_goldens.emplace_back(21,
                                                    test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
-            test_args[1].test_goldens.emplace_back(21, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x1, 0x0, 0x0});
+            test_args[1].test_goldens.emplace_back(21, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x1, 0x1, 0x0});
             break;
         case 5:
             test_args[0].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
@@ -124,14 +124,14 @@ void init_test() {
             test_args[2].test_cases.emplace_back(21, test_case_t{true, 0x00000101, 0x200});
 
             test_args[1].test_records.emplace_back(32, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(32, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x0, 0x0, 0x0});
+            test_args[1].test_goldens.emplace_back(32, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x0, 0x1, 0x0});
 
             test_args[0].test_records.emplace_back(42, test_record_t{true, 0x00000101});
             test_args[0].test_goldens.emplace_back(42,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
 
             test_args[1].test_records.emplace_back(53, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(53, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x0, 0x0, 0x2});
+            test_args[1].test_goldens.emplace_back(53, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x0, 0x4, 0x2});
             test_args[2].test_records.emplace_back(52, test_record_t{true, 0x00000101});
             test_args[2].test_goldens.emplace_back(52,
                                                    test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
@@ -157,14 +157,14 @@ void init_test() {
             test_args[1].test_cases.emplace_back(21, test_case_t{true, 0x00000101, 0x200});
 
             test_args[1].test_records.emplace_back(22, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(22, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x0, 0x0, 0x0});
+            test_args[1].test_goldens.emplace_back(22, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x0, 0x1, 0x0});
 
             test_args[0].test_records.emplace_back(32, test_record_t{true, 0x00000101});
             test_args[0].test_goldens.emplace_back(32,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
 
             test_args[1].test_records.emplace_back(42, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(42, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x0, 0x0, 0x1});
+            test_args[1].test_goldens.emplace_back(42, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x0, 0x2, 0x1});
             test_args[1].test_records.emplace_back(42, test_record_t{true, 0x00000101});
             test_args[1].test_goldens.emplace_back(42,
                                                    test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
@@ -185,7 +185,7 @@ void init_test() {
             test_args[2].test_cases.emplace_back(100, test_case_t{true, 0x00000101, 0x200});
 
             test_args[1].test_records.emplace_back(111, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(111, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x1, 0x2});
+            test_args[1].test_goldens.emplace_back(111, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x5, 0x2});
 
             test_args[2].test_records.emplace_back(121, test_record_t{true, 0x00000101});
             test_args[2].test_goldens.emplace_back(121,
@@ -204,7 +204,7 @@ void init_test() {
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
 
             test_args[1].test_records.emplace_back(143, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(143, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x0, 0x2});
+            test_args[1].test_goldens.emplace_back(143, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x4, 0x2});
             break;
         case 13:
             test_args[0].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
@@ -226,8 +226,8 @@ void init_test() {
             test_args[1].test_cases.emplace_back(21, test_case_t{false, 0x00000101, 0x0});
             test_args[2].test_cases.emplace_back(25, test_case_t{false, 0x00000101, 0x0});
 
-            test_args[2].test_records.emplace_back(46, test_record_t{true, 0x00000101});
-            test_args[2].test_goldens.emplace_back(46, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
+            test_args[2].test_records.emplace_back(56, test_record_t{true, 0x00000101});
+            test_args[2].test_goldens.emplace_back(56, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
             break;
         case 15:
             test_args[0].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
@@ -242,7 +242,7 @@ void init_test() {
             test_args[1].test_goldens.emplace_back(40,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
             test_args[1].test_records.emplace_back(50, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(50, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x0, 0x2});
+            test_args[1].test_goldens.emplace_back(50, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x2, 0x1});
             test_args[1].test_records.emplace_back(50, test_record_t{true, 0x00000101});
             test_args[1].test_goldens.emplace_back(50,
                                                    test_result_t{EXCLUSIVE, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
@@ -257,17 +257,17 @@ void init_test() {
                                                                      0x0});
 
             test_args[1].test_records.emplace_back(57, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(57, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x3, 0x2});
+            test_args[1].test_goldens.emplace_back(57, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x7, 0x2});
 
-            test_args[0].test_records.emplace_back(68, test_record_t{true, 0x00000101});
+            test_args[0].test_records.emplace_back(67, test_record_t{true, 0x00000101});
             test_args[0].test_goldens.emplace_back(67,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
-            test_args[1].test_records.emplace_back(68, test_record_t{true, 0x00000101});
+            test_args[1].test_records.emplace_back(67, test_record_t{true, 0x00000101});
             test_args[1].test_goldens.emplace_back(67,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
 
             test_args[1].test_records.emplace_back(77, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(77, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x0, 0x2});
+            test_args[1].test_goldens.emplace_back(77, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x4, 0x2});
 
             test_args[2].test_records.emplace_back(67, test_record_t{false, 0x00000101});
             test_args[2].test_goldens.emplace_back(67,
@@ -289,14 +289,14 @@ void init_test() {
             test_args[1].test_cases.emplace_back(100, test_case_t{true, 0x00000101, 0x200});
 
             test_args[1].test_records.emplace_back(101, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(101, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x3, 0x2});
+            test_args[1].test_goldens.emplace_back(101, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x7, 0x2});
 
             test_args[1].test_records.emplace_back(102, test_record_t{true, 0x00000101});
             test_args[1].test_goldens.emplace_back(102,
                                                    test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
 
             test_args[1].test_records.emplace_back(122, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(122, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x0, 0x2});
+            test_args[1].test_goldens.emplace_back(122, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x4, 0x2});
 
             test_args[2].test_records.emplace_back(111, test_record_t{true, 0x00000101});
             test_args[2].test_goldens.emplace_back(111,
@@ -328,7 +328,7 @@ void init_test() {
             test_args[0].test_cases.emplace_back(50, test_case_t{true, 0x00000101, 0x300});
 
             test_args[1].test_records.emplace_back(53, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(53, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x1, 0x2});
+            test_args[1].test_goldens.emplace_back(53, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x5, 0x2});
 
             test_args[0].test_records.emplace_back(63, test_record_t{true, 0x00000101});
             test_args[0].test_goldens.emplace_back(63,
@@ -343,10 +343,10 @@ void init_test() {
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x100, 0x0, 0x0});
 
             test_args[1].test_records.emplace_back(73, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(73, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x0, 0x2});
+            test_args[1].test_goldens.emplace_back(73, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x4, 0x2});
 
             test_args[1].test_records.emplace_back(82, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(82, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x0, 0x2});
+            test_args[1].test_goldens.emplace_back(82, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x4, 0x2});
 
             test_args[2].test_records.emplace_back(91, test_record_t{true, 0x00000101});
             test_args[2].test_goldens.emplace_back(91,
@@ -360,7 +360,7 @@ void init_test() {
                                                    test_result_t{MODIFIED, DIR_INVALID, 0x00000001, 0x300, 0x0, 0x0});
 
             test_args[1].test_records.emplace_back(103, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(103, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x0, 0x0});
+            test_args[1].test_goldens.emplace_back(103, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x1, 0x0});
 
             break;
         case 21:
@@ -370,7 +370,7 @@ void init_test() {
             test_args[3].test_cases.emplace_back(50, test_case_t{true, 0x00000101, 0x300});
 
             test_args[1].test_records.emplace_back(53, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(53, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x1, 0x2});
+            test_args[1].test_goldens.emplace_back(53, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x5, 0x2});
 
             test_args[0].test_records.emplace_back(63, test_record_t{true, 0x00000101});
             test_args[0].test_goldens.emplace_back(63,
@@ -388,16 +388,16 @@ void init_test() {
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x200, 0x0, 0x0});
 
             test_args[1].test_records.emplace_back(73, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(73, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x0, 0x2});
+            test_args[1].test_goldens.emplace_back(73, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x4, 0x2});
 
             test_args[1].test_records.emplace_back(81, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(81, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x0, 0x2});
+            test_args[1].test_goldens.emplace_back(81, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x4, 0x2});
 
             test_args[3].test_records.emplace_back(81, test_record_t{true, 0x00000101});
             test_args[3].test_goldens.emplace_back(81, test_result_t{MODIFIED, DIR_INVALID, 0x00000001, 0x300, 0x0, 0x0});
 
             test_args[1].test_records.emplace_back(82, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(82, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x0, 0x3});
+            test_args[1].test_goldens.emplace_back(82, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x8, 0x3});
             break;
         case 22:
             test_args[0].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
@@ -406,9 +406,9 @@ void init_test() {
             test_args[1].test_cases.emplace_back(54, test_case_t{true, 0x00000101, 0x300});
 
             test_args[1].test_records.emplace_back(53, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(53, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x1, 0x2});
+            test_args[1].test_goldens.emplace_back(53, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x5, 0x2});
             test_args[1].test_records.emplace_back(55, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(55, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x1, 0x2});
+            test_args[1].test_goldens.emplace_back(55, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x5, 0x2});
 
             test_args[0].test_records.emplace_back(63, test_record_t{true, 0x00000101});
             test_args[0].test_goldens.emplace_back(63,
@@ -423,10 +423,52 @@ void init_test() {
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x200, 0x0, 0x0});
 
             test_args[1].test_records.emplace_back(75, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(75, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x0, 0x1});
+            test_args[1].test_goldens.emplace_back(75, test_result_t{INVALID, DIR_OWNED, 0x00000001, 0x100, 0x2, 0x1});
 
             test_args[1].test_records.emplace_back(75, test_record_t{true, 0x00000101});
             test_args[1].test_goldens.emplace_back(75, test_result_t{MODIFIED, DIR_INVALID, 0x00000001, 0x300, 0x0, 0x0});
+            break;
+        case 23:
+            test_args[0].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
+            test_args[2].test_cases.emplace_back(21, test_case_t{false, 0x00000101, 0x0});
+            test_args[1].test_cases.emplace_back(35, test_case_t{false, 0x00000101, 0x0});
+
+            test_args[2].test_records.emplace_back(56, test_record_t{true, 0x00000101});
+            test_args[2].test_goldens.emplace_back(56, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
+            break;
+        case 24:
+            test_args[0].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
+            test_args[2].test_cases.emplace_back(21, test_case_t{false, 0x00000101, 0x0});
+            test_args[1].test_cases.emplace_back(35, test_case_t{true, 0x00000101, 0x200});
+
+            test_args[1].test_records.emplace_back(36, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(36, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x0, 0x0,
+                                                                     0x0});
+
+            // 52 - Node 2
+            // 53 - Node 1
+            test_args[2].test_records.emplace_back(52, test_record_t{false, 0x00000101});
+            test_args[2].test_goldens.emplace_back(52,
+                                                   test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
+
+            test_args[1].test_records.emplace_back(53, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(53, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x100, 0x5, 0x0});
+
+            test_args[1].test_records.emplace_back(54, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(54, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x7, 0x1});
+
+            test_args[1].test_records.emplace_back(54, test_record_t{true, 0x00000101});
+            test_args[1].test_goldens.emplace_back(54, test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
+
+            test_args[0].test_records.emplace_back(64, test_record_t{true, 0x00000101});
+            test_args[0].test_goldens.emplace_back(64, test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x5, 0x1});
+
+            test_args[2].test_records.emplace_back(64, test_record_t{true, 0x00000101});
+            test_args[2].test_goldens.emplace_back(64, test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x5, 0x1});
+
+            test_args[1].test_records.emplace_back(75, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(75, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x2, 0x1});
+
             break;
 
         default: ERROR("don't recognize this test");
@@ -491,6 +533,9 @@ void finish_test() {
                     if (test_golden.mem_state >= 2) {
                         if (test_result.owner != test_golden.owner) {
                             ERROR("Directory owner error")
+                        }
+                        if (test_result.sharer_list != test_golden.sharer_list) {
+                            ERROR("Directory sharer list error (Shared-no-data/Owned)")
                         }
                     }
                     if (test_golden.mem_state == DIR_SHARED) {

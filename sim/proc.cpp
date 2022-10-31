@@ -134,11 +134,16 @@ void proc_t::bind(cache_t *c) {
  *  - Directory Shared-no-data (Local) -> Read request -> Forward request -> Node reply (To directory and source) -> Shared in cache and sharer list update
  *
  * Case 24:
- *  - Directory Shared-no-data (Local) -> Write request (write back) -> Invalid in directory
- *  -                                           Read request -> Forward request -> Retry/Resubmit -> Exclusive in cache and owned in directory
- *
- * Case 25:
  *  - Directory shared-no-data (Local) -> Write request -> Resubmit -> Directory shared -> invalidation -> Modified in cache and owned in directory
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 25:
+ *  - Queue 1
+ *
+ * Case 26:
+ *  - Queue 2
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 27:
+ *  - Random
  * --------------------------------------------------------------------------------------------------------------
  */
 void proc_t::advance_one_cycle() {
