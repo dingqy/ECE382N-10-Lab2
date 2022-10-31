@@ -88,7 +88,7 @@ void init_test() {
             test_args[2].test_cases.emplace_back(21, test_case_t{false, 0x00000101, 0x0});
 
             test_args[1].test_records.emplace_back(32, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(32, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x0, 0x0,
+            test_args[1].test_goldens.emplace_back(32, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x0, 0x1,
                                                                      0x0});
 
             test_args[0].test_records.emplace_back(42, test_record_t{true, 0x00000101});
@@ -141,7 +141,7 @@ void init_test() {
             test_args[1].test_cases.emplace_back(21, test_case_t{false, 0x00000101, 0x0});
 
             test_args[1].test_records.emplace_back(22, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(22, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x0, 0x0,
+            test_args[1].test_goldens.emplace_back(22, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x0, 0x1,
                                                                      0x0});
 
             test_args[0].test_records.emplace_back(32, test_record_t{true, 0x00000101});
@@ -253,7 +253,7 @@ void init_test() {
             test_args[2].test_cases.emplace_back(25, test_case_t{true, 0x00000101, 0x200});
 
             test_args[1].test_records.emplace_back(36, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(36, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x0, 0x0,
+            test_args[1].test_goldens.emplace_back(36, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x0, 0x1,
                                                                      0x0});
 
             test_args[1].test_records.emplace_back(57, test_record_t{false, 0x00000101});
@@ -442,7 +442,7 @@ void init_test() {
             test_args[1].test_cases.emplace_back(35, test_case_t{true, 0x00000101, 0x200});
 
             test_args[1].test_records.emplace_back(36, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(36, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x0, 0x0,
+            test_args[1].test_goldens.emplace_back(36, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x0, 0x1,
                                                                      0x0});
 
             // 52 - Node 2
