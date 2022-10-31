@@ -257,19 +257,19 @@ void init_test() {
                                                                      0x0});
 
             test_args[1].test_records.emplace_back(57, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(57, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x7, 0x2});
+            test_args[1].test_goldens.emplace_back(57, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x5, 0x2});
 
-            test_args[0].test_records.emplace_back(67, test_record_t{true, 0x00000101});
-            test_args[0].test_goldens.emplace_back(67,
+            test_args[0].test_records.emplace_back(68, test_record_t{true, 0x00000101});
+            test_args[0].test_goldens.emplace_back(68,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
-            test_args[1].test_records.emplace_back(67, test_record_t{true, 0x00000101});
-            test_args[1].test_goldens.emplace_back(67,
+            test_args[1].test_records.emplace_back(68, test_record_t{true, 0x00000101});
+            test_args[1].test_goldens.emplace_back(68,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
 
-            test_args[1].test_records.emplace_back(77, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(77, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x4, 0x2});
+            test_args[1].test_records.emplace_back(78, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(78, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x4, 0x2});
 
-            test_args[2].test_records.emplace_back(67, test_record_t{false, 0x00000101});
+            test_args[2].test_records.emplace_back(67, test_record_t{true, 0x00000101});
             test_args[2].test_goldens.emplace_back(67,
                                                    test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
             break;
