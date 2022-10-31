@@ -69,24 +69,24 @@ void iu_t::advance_one_cycle() {
             bool enqueue_status = false;
 
             switch (net_buffer[ind].pri) {
-                case (REPLY): 
+                case (REPLY):
                     enqueue_status = net->to_net(node, REPLY, net_buffer[ind].net_cmd);
                     if (enqueue_status) net_buffer[ind].valid = 0;
                     break;
                 case (WRBACK): {
                     enqueue_status = net->to_net(node, WRBACK, net_buffer[ind].net_cmd);
                     if (enqueue_status) net_buffer[ind].valid = 0;
-                    break;                    
+                    break;
                 }
                 case (FORWARD): {
                     enqueue_status = net->to_net(node, FORWARD, net_buffer[ind].net_cmd);
                     if (enqueue_status) net_buffer[ind].valid = 0;
-                    break;                    
+                    break;
                 }
                 case (REQUEST): {
                     enqueue_status = net->to_net(node, REQUEST, net_buffer[ind].net_cmd);
                     if (enqueue_status) net_buffer[ind].valid = 0;
-                    break;                    
+                    break;
                 }
             }
             if (enqueue_status) {
@@ -95,7 +95,7 @@ void iu_t::advance_one_cycle() {
                 break;
             }
         }
-    } 
+    }
 
     if (!skip_cycle) {
         // fixed priority: reply from network
@@ -213,7 +213,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
         ++local_accesses;
 
         switch (pc.busop) {
-            case READ: 
+            case READ:
                 if (pc.permit_tag == SHARED) {
                     // BUS READ
                     if (dir[lcl].state == DIR_INVALID) {
@@ -268,7 +268,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     } else {
                         ERROR_ARGS(("invalid directory state seen at node %d\n", node));
                     }
-                } else if (pc.permit_tag == MODIFIED)  {
+                } else if (pc.permit_tag == MODIFIED) {
                     // BUS RWITM
                     if (dir[lcl].state == DIR_INVALID) {
 
@@ -349,7 +349,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         ERROR_ARGS(("invalid directory state seen at node %d\n", node));
                     }
                 } else {
-                    ERROR_ARGS(("Invalid bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
+                    ERROR_ARGS(
+                            ("Invalid bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
                 }
                 break;
 
@@ -486,7 +487,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
             - depending on dir[lcl] states        
         */
         switch (pc.busop) {
-            case READ: 
+            case READ:
                 if (pc.permit_tag == SHARED) {
                     // BUS READ
                     if (dir[lcl].state == DIR_SHARED) {
@@ -574,23 +575,23 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         }
                     } else { // dir[lcl].state == INVALID
 
-                    // first time request, change dir state to OWNED, reply with EXCLUSIVE
-                    dir[lcl].shared_nodes = (1 << src);
-                    dir[lcl].owner = src;
-                    dir[lcl].state = DIR_OWNED;
+                        // first time request, change dir state to OWNED, reply with EXCLUSIVE
+                        dir[lcl].shared_nodes = (1 << src);
+                        dir[lcl].owner = src;
+                        dir[lcl].state = DIR_OWNED;
 
-                    pc.permit_tag = EXCLUSIVE;
-                    net_cmd.dest = src;
-                    copy_cache_line(pc.data, mem[lcl]);
-                    net_cmd.proc_cmd = pc;
-                    net_cmd.valid_p = 1;
+                        pc.permit_tag = EXCLUSIVE;
+                        net_cmd.dest = src;
+                        copy_cache_line(pc.data, mem[lcl]);
+                        net_cmd.proc_cmd = pc;
+                        net_cmd.valid_p = 1;
 
-                    bool enqueue_status = net->to_net(node, REPLY, net_cmd);
-                    if (!enqueue_status) {
-                        // REPLY queue is full
-                        to_buffer(REPLY, net_cmd);
+                        bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                        if (!enqueue_status) {
+                            // REPLY queue is full
+                            to_buffer(REPLY, net_cmd);
+                        }
                     }
-                }
                 } else if (pc.permit_tag == MODIFIED) {
                     // BUS RWITM
                     if (dir[lcl].state == DIR_SHARED) {
@@ -697,7 +698,8 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         }
                     }
                 } else {
-                    ERROR_ARGS(("Invalid bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
+                    ERROR_ARGS(
+                            ("Invalid bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
                 }
                 break;
 
@@ -738,7 +740,7 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
     if (gen_node(pc.addr) != node) {
         switch (pc.busop) {
-            case (READ): 
+            case (READ):
                 if (pc.permit_tag == SHARED) {
                     // Forwarded BUS READ
                     forward_cmd_p = true;
@@ -837,7 +839,8 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                         }
                     }
                 } else {
-                    ERROR_ARGS(("Invalid bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
+                    ERROR_ARGS(
+                            ("Invalid bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
                 }
                 break;
 
