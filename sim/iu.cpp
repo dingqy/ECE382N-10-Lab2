@@ -298,6 +298,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         } else {
                             // send out invalidates
                             dir[lcl].state = DIR_OWNED;
+                            dir[lcl].shared_nodes |= node;
 
                             for (int i_node = 0; i_node < 32; i_node++) {
                                 if ((dir[lcl].shared_nodes >> i_node) & 0x1) {
@@ -332,6 +333,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         net_cmd.dest = dir[lcl].owner;
 
                         pc.busop = INVALIDATE;
+                        dir[lcl].shared_nodes |= (1 << node);
                         net_cmd.proc_cmd = pc;
                         net_cmd.valid_p = 1;
 
@@ -444,10 +446,10 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *                        One possible solution is add one internal request queue and buffer the request temporarily
  *                        If the buffer is full, and invalidation queue is still not enough, non-ack response is sent
  *              + Send acknowledge back to source node
- *          o If the permitted tag is Shared: - MOVED TO INVALIDATION
+ *          o If the permitted tag is Shared:
  *              + Update sharer list (Change 1 to 0)
  *      x This cache block is Modified
- *          o If the owner is request node, write data (Exclusive do not need this), and change state to be Invalid - MOVED TO INVALIDATION
+ *          o If the owner is request node, write data (Exclusive do not need this), and change state to be Invalid
  *              + Return ack to the requestor 
  *          - If the owner is other nodes
  *              + If the requestor is one of sharers, return non-ack response
@@ -604,6 +606,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         } else {
                             // Change the block to be Modified state
                             dir[lcl].state = DIR_OWNED;
+                            dir[lcl].shared_nodes |= 1 << src;
 
                             // Send invalidation requests until all the sharers acknowledge
                             for (int i_node = 0; i_node < 32; i_node++) {
@@ -611,7 +614,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                     if (i_node != src) {
                                         // don't send invalidates to the src if it is in the sharer list
                                         net_cmd_t net_cmd_inv;
-                                        net_cmd_inv.src = src; // we need to know who is the requestor
+                                        net_cmd_inv.src = src; // later used to invalidate shared list
                                         net_cmd_inv.dest = i_node;
                                         pc.busop = INVALIDATE;
                                         net_cmd_inv.proc_cmd = pc;
@@ -716,6 +719,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
             response_t r = cache->snoop(net_cmd);
 
             // reply to the src node (the dir)
+            net_cmd.src = node;
             net_cmd.dest = src;
             net_cmd.proc_cmd = pc;
             net_cmd.valid_p = 1;
@@ -989,10 +993,18 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                 // Update sharer list
                 uint temp = ~(1 << net_cmd.src);
                 dir[lcl].shared_nodes &= temp;
+                NOTE("INVALIDATE ACK");
+                NOTE_ARGS(("INVALIDATE ACK: Shared nodes %d", dir[lcl].shared_nodes));
 
                 // End the processor command when all invalidations acked
-                if ((dir[lcl].shared_nodes == 0) || (dir[lcl].shared_nodes == (1 << net_cmd.src))) {
+                if (check_onehot(dir[lcl].shared_nodes)) {
                     proc_cmd_p = false; // clear proc_cmd
+                    for (int i_node = 0; i_node < 32; i_node++) {
+                        if ((dir[lcl].shared_nodes >> i_node) & 0x1) {
+                            dir[lcl].owner = i_node;
+                            NOTE_ARGS(("Node %d, dir update to owner to %d", node, i_node));
+                        }
+                    }
                     cache->reply(pc); // now modified granted
                 }
             }
