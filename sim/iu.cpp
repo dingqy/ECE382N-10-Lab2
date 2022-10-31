@@ -651,9 +651,9 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                             dir[lcl].shared_nodes &= temp;
                                         } else {
                                             // enqueue to the local queue if REQUEST queue is full, for invalidations
-                                            bool enqueue_status = net->to_net(node, REQUEST, net_cmd);
+                                            bool enqueue_status = net->to_net(node, REQUEST, net_cmd_inv);
                                             if (!enqueue_status) {
-                                                to_net_inv_q.push_back(net_cmd);
+                                                to_net_inv_q.push_back(net_cmd_inv);
                                             }
                                         }
                                     }
