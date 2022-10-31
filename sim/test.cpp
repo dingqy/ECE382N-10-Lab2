@@ -447,7 +447,7 @@ void init_test() {
 
             // 52 - Node 2
             // 53 - Node 1
-            test_args[2].test_records.emplace_back(52, test_record_t{false, 0x00000101});
+            test_args[2].test_records.emplace_back(52, test_record_t{true, 0x00000101});
             test_args[2].test_goldens.emplace_back(52,
                                                    test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
 
