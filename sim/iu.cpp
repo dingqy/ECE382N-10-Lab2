@@ -115,6 +115,15 @@ void iu_t::advance_one_cycle() {
             process_net_request(net->from_net(node, REQUEST));
             NOTE_ARGS(("node #%d processes a %s\n", node, "REQUEST"));
 
+        } else if (!to_net_inv_q.empty()) {
+            net_cmd_t inv_net_cmd = to_net_inv_q.dequeue();
+            bool enqueue_status = net->to_net(node, REQUEST, inv_net_cmd);
+            if (!enqueue_status) {
+                to_net_inv_q.push_front(inv_net_cmd);
+            } else {
+                NOTE_ARGS(("node #%d processes a %s from the inv queue\n", node, "REQUEST"));
+            }
+
         } else if (proc_cmd_p && !proc_cmd_processed_p) {
             proc_cmd_processed_p = true;    // do not process the same proc cmd repeatedly
             // will be reset to false if retry needed
@@ -122,14 +131,6 @@ void iu_t::advance_one_cycle() {
         }
     }
 
-    // enqueue network REQUEST
-    if (!to_net_inv_q.empty()) {
-        net_cmd_t inv_net_cmd = to_net_inv_q.dequeue();
-        bool enqueue_status = net->to_net(node, REQUEST, inv_net_cmd);
-        if (!enqueue_status) {
-            to_net_inv_q.push_front(inv_net_cmd);
-        }
-    }
 }
 
 // processor side
@@ -298,6 +299,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         } else {
                             // send out invalidates
                             dir[lcl].state = DIR_OWNED;
+                            dir[lcl].owner = node;
                             dir[lcl].shared_nodes |= node;
 
                             for (int i_node = 0; i_node < 32; i_node++) {
@@ -307,8 +309,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                                         net_cmd_t net_cmd;
                                         net_cmd.src = node;
                                         net_cmd.dest = i_node;
-                                        pc.busop = INVALIDATE;
                                         net_cmd.proc_cmd = pc;
+                                        net_cmd.proc_cmd.busop = INVALIDATE;
                                         net_cmd.valid_p = 1;
 
                                         if (i_node == node) {
@@ -326,8 +328,11 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                                 }
                             }
                             // sharer list won't be updated for now
-                            // the requestor won't be the owner for now 
-                            // don't clear proc_cmp_p for now
+                            // reply to the cache
+                            copy_cache_line(pc.data, mem[lcl]);
+                            proc_cmd_p = false; // clear proc_cmd
+                            cache->reply(pc);
+                        
                         }
 
                     } else if (dir[lcl].state == DIR_OWNED) {
@@ -615,6 +620,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         } else {
                             // Change the block to be Modified state
                             dir[lcl].state = DIR_OWNED;
+                            dir[lcl].owner = src;
                             dir[lcl].shared_nodes |= 1 << src;
 
                             // Send invalidation requests until all the sharers acknowledge
@@ -625,8 +631,8 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                         net_cmd_t net_cmd_inv;
                                         net_cmd_inv.src = src; // later used to invalidate shared list
                                         net_cmd_inv.dest = i_node;
-                                        pc.busop = INVALIDATE;
                                         net_cmd_inv.proc_cmd = pc;
+                                        net_cmd_inv.proc_cmd.busop = INVALIDATE;
                                         net_cmd_inv.valid_p = 1;
 
                                         if (i_node == node) {
@@ -645,6 +651,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                             }
                             // ack the src node (net_cmd.valid_p = 1)
                             net_cmd.valid_p = 1;
+                            copy_cache_line(pc.data, mem[lcl]);
                         }
 
                         // reply to the src node
@@ -736,9 +743,9 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
         if (pc.busop == INVALIDATE) {
             response_t r = cache->snoop(net_cmd);
 
-            // reply to the src node (the dir)
+            // reply to the dir
             net_cmd.src = node;
-            net_cmd.dest = src;
+            net_cmd.dest = gen_node(pc.addr);
             net_cmd.proc_cmd = pc;
             net_cmd.valid_p = 1;
 
