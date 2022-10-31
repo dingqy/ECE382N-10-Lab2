@@ -1029,7 +1029,6 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                             NOTE_ARGS(("Node %d, dir update to owner to %d", node, i_node));
                         }
                     }
-                    cache->reply(pc); // now modified granted
                 }
             }
             break;
