@@ -361,15 +361,14 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         net_cmd.src = node;
                         net_cmd.dest = dir[lcl].owner;
 
-                        pc.busop = INVALIDATE;
                         dir[lcl].shared_nodes |= (1 << node);
                         net_cmd.proc_cmd = pc;
                         net_cmd.valid_p = 1;
 
-                        bool enqueue_status = net->to_net(node, REQUEST, net_cmd);
+                        bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
                         if (!enqueue_status) {
                             // REQUEST queue is full
-                            to_buffer(REQUEST, net_cmd);
+                            to_buffer(FORWARD, net_cmd);
                         }
 
                         // the requestor won't be the owner for now 
@@ -928,6 +927,15 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
                 copy_cache_line(mem[lcl], pc.data);
                 dir[lcl].state = DIR_INVALID;
                 dir[lcl].shared_nodes = 0;
+            } else if (dir[lcl].state == DIR_SHARED_NO_DATA) {
+                if (dir[lcl].owner != src) {
+                    ERROR_ARGS(("Non-owner write-back: owner %d, node %d\n", dir[lcl].owner, node));
+                }
+                copy_cache_line(mem[lcl], pc.data);
+                dir[lcl].state = DIR_INVALID;
+                dir[lcl].shared_nodes = 0;              
+            } else {
+                ERROR_ARGS(("invalid directory state seen at node %d\n", node));
             }
         } else {
             ERROR("WRITEBACK queue should satisfy gen_node(pc.addr) == node");
@@ -1017,6 +1025,11 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                 dir[lcl].owner = net_cmd.src;
                 dir[lcl].shared_nodes = (1 << net_cmd.src);
 
+                if (net_cmd.src == gen_node(pc.addr)) {
+                    // requestor is the dir
+                    proc_cmd_p = false; // clear proc_cmd
+                    cache->reply(pc);                    
+                }
             } else {
                 // Write request ack (Not forwarded request)
                 //   - Fill memory
@@ -1039,11 +1052,8 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                 // End the processor command when all invalidations acked
                 if (check_onehot(dir[lcl].shared_nodes)) {
                     proc_cmd_p = false; // clear proc_cmd
-                    for (int i_node = 0; i_node < 32; i_node++) {
-                        if ((dir[lcl].shared_nodes >> i_node) & 0x1) {
-                            dir[lcl].owner = i_node;
-                            NOTE_ARGS(("Node %d, dir update to owner to %d", node, i_node));
-                        }
+                    if (dir[lcl].owner == node) {
+                        cache->reply(pc);
                     }
                 }
             }
