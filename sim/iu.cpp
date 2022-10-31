@@ -311,8 +311,17 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                                         net_cmd.proc_cmd = pc;
                                         net_cmd.valid_p = 1;
 
-                                        // enqueue to the local queue for invalidations
-                                        to_net_inv_q.push_back(net_cmd);
+                                        if (i_node == node) {
+                                            // no need to generate net req if the dir has the copy
+                                            net_cmd.proc_cmd.busop = INVALIDATE;
+                                            response_t r = cache->snoop(net_cmd);
+                                            // update sharer list
+                                            uint temp = ~(1 << node);
+                                            dir[lcl].shared_nodes &= temp;
+                                        } else {
+                                            // enqueue to the local queue for invalidations
+                                            to_net_inv_q.push_back(net_cmd);
+                                        }
                                     }
                                 }
                             }
@@ -620,8 +629,17 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                         net_cmd_inv.proc_cmd = pc;
                                         net_cmd_inv.valid_p = 1;
 
-                                        // enqueue to the local queue for invalidations
-                                        to_net_inv_q.push_back(net_cmd_inv);
+                                        if (i_node == node) {
+                                            // no need to generate net req if the dir has the copy
+                                            net_cmd.proc_cmd.busop = INVALIDATE;
+                                            response_t r = cache->snoop(net_cmd);
+                                            // Update sharer list
+                                            uint temp = ~(1 << node);
+                                            dir[lcl].shared_nodes &= temp;
+                                        } else {
+                                            // enqueue to the local queue for invalidations
+                                            to_net_inv_q.push_back(net_cmd_inv);
+                                        }
                                     }
                                 }
                             }
@@ -993,7 +1011,6 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                 // Update sharer list
                 uint temp = ~(1 << net_cmd.src);
                 dir[lcl].shared_nodes &= temp;
-                NOTE("INVALIDATE ACK");
                 NOTE_ARGS(("INVALIDATE ACK: Shared nodes %d", dir[lcl].shared_nodes));
 
                 // End the processor command when all invalidations acked
