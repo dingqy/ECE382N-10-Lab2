@@ -191,6 +191,10 @@ void init_test() {
             test_args[2].test_goldens.emplace_back(121,
                                                    test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
 
+            test_args[1].test_records.emplace_back(111, test_record_t{true, 0x00000101});
+            test_args[1].test_goldens.emplace_back(111,
+                                                   test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
+
             test_args[1].test_records.emplace_back(132, test_record_t{true, 0x00000101});
             test_args[1].test_goldens.emplace_back(132,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
@@ -470,6 +474,7 @@ void finish_test() {
             case 22:
                 std::cout << "Processor: " << i << " Checking..." << std::endl;
                 for (int j = 0; j < test_args[i].test_goldens.size(); j++) {
+                    std::cout << "Processor: " << i << " Checking record " << j << std::endl;
                     test_result_t test_result = test_args[i].test_results[j].second;
                     test_result_t test_golden = test_args[i].test_goldens[j].second;
                     if (test_result.cache_state != test_golden.cache_state) {
