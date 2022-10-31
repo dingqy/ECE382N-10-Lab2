@@ -313,7 +313,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                             // send out invalidates
                             dir[lcl].state = DIR_OWNED;
                             dir[lcl].owner = node;
-                            dir[lcl].shared_nodes |= node;
+                            dir[lcl].shared_nodes |= (1 << node);
 
                             for (int i_node = 0; i_node < 32; i_node++) {
                                 if ((dir[lcl].shared_nodes >> i_node) & 0x1) {
@@ -326,17 +326,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                                         net_cmd.proc_cmd.busop = INVALIDATE;
                                         net_cmd.valid_p = 1;
 
-                                        if (i_node == node) {
-                                            // no need to generate net req if the dir has the copy
-                                            net_cmd.proc_cmd.busop = INVALIDATE;
-                                            response_t r = cache->snoop(net_cmd);
-                                            // update sharer list
-                                            uint temp = ~(1 << node);
-                                            dir[lcl].shared_nodes &= temp;
-                                        } else {
-                                            // enqueue to the local queue for invalidations
-                                            to_net_inv_q.push_back(net_cmd);
-                                        }
+                                        // enqueue to the local queue for invalidations
+                                        to_net_inv_q.push_back(net_cmd);
                                     }
                                 }
                             }
