@@ -91,13 +91,13 @@ void proc_t::bind(cache_t *c) {
  *  - Directory Owned (Local) -> Write request -> Forward request -> Network -> Node reply (To directory and source) -> Modified in one cache, Invalid in other cache, and owner change in directory
  * --------------------------------------------------------------------------------------------------------------
  * Case 11:
- *  - Directory Shared -> Read request -> Node reply (To source) -> Shared in cache and sharer list update in directory
+ *  - Directory Shared (Global) -> Read request -> Node reply (To source) -> Shared in cache and sharer list update in directory
  *
  * Case 12:
- *  - Directory Shared -> Write request -> Invalidation broadcast -> Node reply (To source) -> Invalidation ack -> Modified in cache, invalidation, and owned in directory
+ *  - Directory Shared (Global) -> Write request -> Invalidation broadcast -> Node reply (To source) -> Invalidation ack -> Modified in cache, invalidation, and owned in directory
  *
  * Case 13:
- *  - Directory Shared -> Write request (write back) -> Update sharer list
+ *  - Directory Shared (Global) -> Write request (write back) -> Update sharer list
  * --------------------------------------------------------------------------------------------------------------
  * Case 14:
  *  - Directory Shared-no-data -> Read request -> Forward request -> Node reply (To directory and source) -> Shared in cache and sharer list update
@@ -107,7 +107,38 @@ void proc_t::bind(cache_t *c) {
  *  -                                           Read request -> Forward request -> Retry/Resubmit -> Exclusive in cache and owned in directory
  *
  * Case 16:
- *  -
+ *  - Directory shared-no-data -> Write request -> Resubmit -> Directory shared -> invalidation -> Modified in cache and owned in directory
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 17:
+ *  - Directory Shared (Local) -> Read request -> Node reply (To source) -> Shared in cache and sharer list update in directory
+ *
+ * Case 18:
+ *  - Directory Shared (Local) -> Write request -> Invalidation broadcast -> Node reply (To source) -> Invalidation ack -> Modified in cache, invalidation, and owned in directory
+ *
+ * Case 19:
+ *  - Directory Shared (Local) -> Write request (write back) -> Update sharer list
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 20:
+ *  - Directory Shared (Global) -> Write request -> Invalidation -> ...
+ *  -                                               Write request -> Resubmit/Retry
+ *
+ * Case 21:
+ *  - Directory Shared (Global) -> Write request -> Invalidation -> ...
+ *  -                                               Write request -> Forward request
+ *
+ * Case 22:
+ *  - Directory Shared (Local) -> Write request -> Invalidation -> ...
+ *  -                                               Write request -> Forward request
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 23:
+ *  - Directory Shared-no-data (Local) -> Read request -> Forward request -> Node reply (To directory and source) -> Shared in cache and sharer list update
+ *
+ * Case 24:
+ *  - Directory Shared-no-data (Local) -> Write request (write back) -> Invalid in directory
+ *  -                                           Read request -> Forward request -> Retry/Resubmit -> Exclusive in cache and owned in directory
+ *
+ * Case 25:
+ *  - Directory shared-no-data (Local) -> Write request -> Resubmit -> Directory shared -> invalidation -> Modified in cache and owned in directory
  * --------------------------------------------------------------------------------------------------------------
  */
 void proc_t::advance_one_cycle() {
@@ -147,6 +178,12 @@ void proc_t::advance_one_cycle() {
         case 13:
         case 14:
         case 15:
+        case 16:
+        case 17:
+        case 18:
+        case 19:
+        case 20:
+        case 21:
             if (case_index < test_set.test_cases.size()) {
                 if (cur_cycle >= test_set.test_cases[case_index].first) {
                     if (test_set.test_cases[case_index].second.write) {
