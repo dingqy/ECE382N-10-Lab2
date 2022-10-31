@@ -298,12 +298,12 @@ void init_test() {
             test_args[1].test_records.emplace_back(123, test_record_t{false, 0x00000101});
             test_args[1].test_goldens.emplace_back(123, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x2, 0x1});
 
-            test_args[2].test_records.emplace_back(112, test_record_t{true, 0x00000101});
-            test_args[2].test_goldens.emplace_back(112,
+            test_args[2].test_records.emplace_back(113, test_record_t{true, 0x00000101});
+            test_args[2].test_goldens.emplace_back(113,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
 
-            test_args[0].test_records.emplace_back(112, test_record_t{true, 0x00000101});
-            test_args[0].test_goldens.emplace_back(112,
+            test_args[0].test_records.emplace_back(113, test_record_t{true, 0x00000101});
+            test_args[0].test_goldens.emplace_back(113,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
             break;
         case 19:
