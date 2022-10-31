@@ -292,7 +292,6 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         dir[lcl].shared_nodes = (1 << node);
                         dir[lcl].owner = node;
                         dir[lcl].state = DIR_OWNED;
-                        pc.permit_tag = EXCLUSIVE;
                         copy_cache_line(pc.data, mem[lcl]);
 
                         proc_cmd_p = false; // clear proc_cmd
@@ -730,7 +729,6 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         dir[lcl].owner = src;
                         dir[lcl].state = DIR_OWNED;
 
-                        pc.permit_tag = EXCLUSIVE;
                         net_cmd.dest = src;
                         copy_cache_line(pc.data, mem[lcl]);
                         net_cmd.proc_cmd = pc;
