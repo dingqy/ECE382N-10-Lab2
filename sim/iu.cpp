@@ -330,6 +330,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         net_cmd_t net_cmd;
                         net_cmd.src = node;
                         net_cmd.dest = dir[lcl].owner;
+
+                        pc.busop = INVALIDATE;
                         net_cmd.proc_cmd = pc;
                         net_cmd.valid_p = 1;
 
