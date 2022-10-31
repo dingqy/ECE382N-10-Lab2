@@ -137,10 +137,16 @@ void proc_t::bind(cache_t *c) {
  *  - Directory shared-no-data (Local) -> Write request -> Resubmit -> Directory shared -> invalidation -> Modified in cache and owned in directory
  * --------------------------------------------------------------------------------------------------------------
  * Case 25:
- *  - Queue 1
+ *  - Invalidation 31 nodes (Global)
  *
  * Case 26:
- *  - Queue 2
+ *  - Invalidation 31 nodes (Local)
+ *
+ * Case 27:
+ *  - Queue 1 (Send buffer full)
+ *
+ * Case 28:
+ *  - Queue 2 (Invalidation queue full)
  * --------------------------------------------------------------------------------------------------------------
  * Case 27:
  *  - Random
@@ -192,6 +198,8 @@ void proc_t::advance_one_cycle() {
         case 22:
         case 23:
         case 24:
+        case 25:
+        case 26:
             if (case_index < test_set.test_cases.size()) {
                 if (cur_cycle >= test_set.test_cases[case_index].first) {
                     if (test_set.test_cases[case_index].second.write) {

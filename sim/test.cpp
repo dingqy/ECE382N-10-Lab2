@@ -470,6 +470,42 @@ void init_test() {
             test_args[1].test_goldens.emplace_back(75, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x2, 0x1});
 
             break;
+        case 25:
+            test_args[0].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
+            test_args[1].test_cases.emplace_back(21, test_case_t{false, 0x00000101, 0x0});
+            for (int i = 2; i < 32; i++) {
+                test_args[i].test_cases.emplace_back(50, test_case_t{false, 0x00000101, 0x0});
+            }
+            test_args[1].test_records.emplace_back(1000, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(1000, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x100, 0xFFFFFFFF, 0x0});
+
+            test_args[0].test_cases.emplace_back(1000, test_case_t{true, 0x00000101, 0x200});
+            for (int i = 1; i < 32; i++) {
+                test_args[i].test_records.emplace_back(2000, test_record_t{true, 0x00000101});
+                test_args[i].test_goldens.emplace_back(2000, test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
+            }
+            test_args[0].test_records.emplace_back(2000, test_record_t{true, 0x00000101});
+            test_args[0].test_goldens.emplace_back(2000, test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
+            break;
+        case 26:
+            test_args[0].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
+            test_args[1].test_cases.emplace_back(21, test_case_t{false, 0x00000101, 0x0});
+            for (int i = 2; i < 32; i++) {
+                test_args[i].test_cases.emplace_back(50, test_case_t{false, 0x00000101, 0x0});
+            }
+            test_args[1].test_records.emplace_back(1000, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(1000, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x100, 0xFFFFFFFF, 0x0});
+
+            test_args[1].test_cases.emplace_back(1000, test_case_t{true, 0x00000101, 0x200});
+            test_args[0].test_records.emplace_back(2000, test_record_t{true, 0x00000101});
+            test_args[0].test_goldens.emplace_back(2000, test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
+            for (int i = 2; i < 32; i++) {
+                test_args[i].test_records.emplace_back(2000, test_record_t{true, 0x00000101});
+                test_args[i].test_goldens.emplace_back(2000, test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
+            }
+            test_args[1].test_records.emplace_back(2000, test_record_t{true, 0x00000101});
+            test_args[1].test_goldens.emplace_back(2000, test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
+            break;
 
         default: ERROR("don't recognize this test");
     }
@@ -516,6 +552,8 @@ void finish_test() {
             case 22:
             case 23:
             case 24:
+            case 25:
+            case 26:
                 std::cout << "Processor: " << i << " Checking..." << std::endl;
                 for (int j = 0; j < test_args[i].test_goldens.size(); j++) {
                     std::cout << "Processor: " << i << " Checking record " << j << std::endl;
