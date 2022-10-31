@@ -471,7 +471,6 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  * @return Success or not
  */
 bool iu_t::process_net_request(net_cmd_t net_cmd) {
-    net_cmd_t original_net_cmd = net_cmd;
     proc_cmd_t pc = net_cmd.proc_cmd;
 
     int lcl = gen_local_cache_line(pc.addr);
@@ -546,10 +545,12 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                 to_buffer(REPLY, net_cmd);
                             }
 
-                            net_cmd.dest = gen_node(pc.addr); // reply to the dir with data
-
-                            enqueue_status = net->to_net(node, REPLY, net_cmd);
-                            to_buffer(REPLY, net_cmd);
+                            // reply to the dir with data
+                            // if dir is not the requestor
+                            if (gen_node(pc.addr) != src) {
+                                net_cmd.dest = gen_node(pc.addr);
+                                to_buffer(REPLY, net_cmd);
+                            }
 
                         } else {
                             // If the owner is other nodes, 
@@ -729,12 +730,9 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
 }
 
 bool iu_t::process_net_forward(net_cmd_t net_cmd) {
-    net_cmd_t original_net_cmd = net_cmd;
     proc_cmd_t pc = net_cmd.proc_cmd;
 
-    int lcl = gen_local_cache_line(pc.addr);
     int src = net_cmd.src;
-    int dest = net_cmd.dest;
 
     if (gen_node(pc.addr) != node) {
         switch (pc.busop) {
@@ -782,8 +780,11 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         if (forward_net_cmd.permit_tag == MODIFIED || forward_net_cmd.permit_tag == EXCLUSIVE) {
                             // reply to the dir with data
-                            net_cmd.dest = gen_node(pc.addr);
-                            to_buffer(REPLY, net_cmd);
+                            // if dir is not the requestor
+                            if (gen_node(pc.addr) != src) {
+                                net_cmd.dest = gen_node(pc.addr);
+                                to_buffer(REPLY, net_cmd);
+                            }
                         }
                     }
                 } else if (pc.permit_tag == MODIFIED) {
@@ -826,10 +827,12 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                         }
 
                         // reply to the dir with data
+                        // if dir is not the requestor
                         net_cmd.dest = gen_node(pc.addr);
-
-                        to_buffer(REPLY, net_cmd);
-
+                        if (gen_node(pc.addr) != src) {
+                            net_cmd.dest = gen_node(pc.addr);
+                            to_buffer(REPLY, net_cmd);
+                        }
                     }
                 } else {
                     ERROR_ARGS(("Invalid bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
@@ -849,7 +852,6 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 }
 
 bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
-    net_cmd_t original_net_cmd = net_cmd;
     proc_cmd_t pc = net_cmd.proc_cmd;
 
     int lcl = gen_local_cache_line(pc.addr);
