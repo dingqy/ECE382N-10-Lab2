@@ -260,7 +260,6 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         // temporarily set dir state to DIR_SHARED_NO_DATA
                         // in case write requests come and we need to send invalidates
                         dir[lcl].state = DIR_SHARED_NO_DATA;
-                        dir[lcl].shared_nodes |= (1 << node);
 
                         // no cache reply for now
                         // don't clear proc_cmd for now
@@ -360,7 +359,6 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         net_cmd.src = node;
                         net_cmd.dest = dir[lcl].owner;
 
-                        dir[lcl].shared_nodes |= (1 << node);
                         net_cmd.proc_cmd = pc;
                         net_cmd.valid_p = 1;
 
@@ -593,7 +591,6 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                             // update the sharer list, and forward the request to the owner
 
                             dir[lcl].state = DIR_SHARED_NO_DATA;
-                            dir[lcl].shared_nodes |= (1 << src);
 
                             // the src remains the same, the dest changes to the actural owner
                             net_cmd.dest = dir[lcl].owner;
