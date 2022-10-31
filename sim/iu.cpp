@@ -1040,14 +1040,6 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                 uint temp = ~(1 << net_cmd.src);
                 dir[lcl].shared_nodes &= temp;
                 NOTE_ARGS(("INVALIDATE ACK: Shared nodes %d", dir[lcl].shared_nodes));
-
-                // End the processor command when all invalidations acked
-                if (check_onehot(dir[lcl].shared_nodes)) {
-                    proc_cmd_p = false; // clear proc_cmd
-                    if (dir[lcl].owner == node) {
-                        cache->reply(pc);
-                    }
-                }
             }
             break;
         }
