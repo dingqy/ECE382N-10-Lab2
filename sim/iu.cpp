@@ -942,7 +942,11 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                 dir[lcl].state = DIR_SHARED;
                 dir[lcl].shared_nodes |= (1 << net_cmd.src);
                 NOTE_ARGS(("Node %d, dir update to SHARED based on the reply from node %d", node, net_cmd.src));
-
+                if (net_cmd.src == gen_node(pc.addr)) {
+                    // requestor is the dir
+                    proc_cmd_p = false; // clear proc_cmd
+                    cache->reply(pc);                    
+                }
             } else {
                 // Read request ack (Not forwarded request)
                 // Fill cache (may trigger replacement write back)
