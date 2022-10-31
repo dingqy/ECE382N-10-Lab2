@@ -313,10 +313,10 @@ void init_test() {
             test_args[1].test_records.emplace_back(42, test_record_t{false, 0x00000101});
             test_args[1].test_goldens.emplace_back(42, test_result_t{INVALID, DIR_SHARED, 0x00000001, 0x100, 0x3, 0x0});
 
-            test_args[1].test_cases.emplace_back(72, test_case_t{false, 0x00002001, 0x0});
-            test_args[1].test_cases.emplace_back(74, test_case_t{false, 0x00004001, 0x0});
-            test_args[1].test_cases.emplace_back(76, test_case_t{false, 0x00006001, 0x0});
-            test_args[1].test_cases.emplace_back(78, test_case_t{false, 0x00008001, 0x0});
+            test_args[1].test_cases.emplace_back(72, test_case_t{false, 0x00002101, 0x0});
+            test_args[1].test_cases.emplace_back(74, test_case_t{false, 0x00004101, 0x0});
+            test_args[1].test_cases.emplace_back(76, test_case_t{false, 0x00006101, 0x0});
+            test_args[1].test_cases.emplace_back(78, test_case_t{false, 0x00008101, 0x0});
 
             test_args[1].test_records.emplace_back(80, test_record_t{false, 0x00000101});
             test_args[1].test_goldens.emplace_back(80, test_result_t{INVALID, DIR_SHARED, 0x00000001, 0x100, 0x1, 0x0});
