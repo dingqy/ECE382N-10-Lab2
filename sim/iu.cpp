@@ -326,8 +326,11 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                                         net_cmd.proc_cmd.busop = INVALIDATE;
                                         net_cmd.valid_p = 1;
 
-                                        // enqueue to the local queue for invalidations
-                                        to_net_inv_q.push_back(net_cmd);
+                                        // enqueue to the local queue if net queue is full, for invalidations
+                                        bool enqueue_status = net->to_net(node, REQUEST, net_cmd);
+                                        if (!enqueue_status) {
+                                            to_net_inv_q.push_back(net_cmd);
+                                        }
                                     }
                                 }
                             }
@@ -647,8 +650,11 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                             uint temp = ~(1 << node);
                                             dir[lcl].shared_nodes &= temp;
                                         } else {
-                                            // enqueue to the local queue for invalidations
-                                            to_net_inv_q.push_back(net_cmd_inv);
+                                            // enqueue to the local queue if REQUEST queue is full, for invalidations
+                                            bool enqueue_status = net->to_net(node, REQUEST, net_cmd);
+                                            if (!enqueue_status) {
+                                                to_net_inv_q.push_back(net_cmd);
+                                            }
                                         }
                                     }
                                 }
