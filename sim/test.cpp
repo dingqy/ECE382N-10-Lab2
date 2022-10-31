@@ -514,6 +514,8 @@ void finish_test() {
             case 20:
             case 21:
             case 22:
+            case 23:
+            case 24:
                 std::cout << "Processor: " << i << " Checking..." << std::endl;
                 for (int j = 0; j < test_args[i].test_goldens.size(); j++) {
                     std::cout << "Processor: " << i << " Checking record " << j << std::endl;
