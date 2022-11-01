@@ -87,6 +87,11 @@ typedef struct {
 
 typedef struct {
     bool valid;
+    proc_cmd_t proc_cmd;
+} iu_proc_cmd_buffer_t;
+
+typedef struct {
+    bool valid;
     pri_t pri;
     net_cmd_t net_cmd;
 } iu_net_buffer_t;
