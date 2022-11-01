@@ -61,6 +61,7 @@ void iu_t::bind(cache_t *c, network_t *n) {
  * TODO: New priority: REPLY > WRITEBACK > FORWARD > REQUEST > PROC; SEND_REPLY > SEND_FORWARD
  */
 void iu_t::advance_one_cycle() {
+    forward_cmd_p = false;
     // clear pending buffers to queues
     bool skip_cycle = false;
     for (int ind = 0; ind < SIZE_IU_TO_NET_BUFFER; ind++) {
@@ -116,12 +117,22 @@ void iu_t::advance_one_cycle() {
             NOTE_ARGS(("node #%d processes a %s\n", node, "REQUEST"));
 
         } else if (!to_net_inv_q.empty()) {
-            net_cmd_t inv_net_cmd = to_net_inv_q.dequeue();
-            bool enqueue_status = net->to_net(node, REQUEST, inv_net_cmd);
-            if (!enqueue_status) {
-                to_net_inv_q.push_front(inv_net_cmd);
-            } else {
-                NOTE_ARGS(("node #%d processes a %s from the inv queue\n", node, "REQUEST"));
+            iu_inv_queue_t element = to_net_inv_q.dequeue();
+            address_tag_t cur_addr_tag = element.broadcast_tag;
+            net_cmd_t inv_net_cmd;
+
+            while ((element.broadcast_tag == cur_addr_tag)) {
+                inv_net_cmd = element.net_cmd;
+                bool enqueue_status = net->to_net(node, REQUEST, inv_net_cmd);
+                if (!enqueue_status) {
+                    to_net_inv_q.push_front(element);
+                    break;
+                } else {
+                    NOTE_ARGS(("node #%d processes a %s\n", node, "INV REQUEST"));
+                }
+                if (to_net_inv_q.empty()) break;
+                element = to_net_inv_q.dequeue();
+
             }
 
         } else if (proc_cmd_p && !proc_cmd_processed_p) {
@@ -155,7 +166,6 @@ bool iu_t::from_proc(proc_cmd_t pc) {
             return (true); // can accept a new proc cmd
         }
     } else {
-        forward_cmd_p = false;
         forward_net_cmd = pc;
         return false;
     }
@@ -331,10 +341,13 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                                         net_cmd.proc_cmd.busop = INVALIDATE;
                                         net_cmd.valid_p = 1;
 
-                                        // enqueue to the local queue if net queue is full, for invalidations
+                                        // enqueue to the invalidation queue
                                         bool enqueue_status = net->to_net(node, REQUEST, net_cmd);
                                         if (!enqueue_status) {
-                                            to_net_inv_q.push_back(net_cmd);
+                                            iu_inv_queue_t inv_queue_element;
+                                            inv_queue_element.net_cmd = net_cmd;
+                                            inv_queue_element.broadcast_tag = pc.addr;
+                                            to_net_inv_q.push_back(inv_queue_element);
                                         }
                                     }
                                 }
@@ -566,7 +579,6 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                             response_t r = cache->snoop(net_cmd);
                             // can't return the data back for now
                             // have to access cache for data
-                            forward_cmd_p = false;
 
                             if (!r.hit_p) {
                                 ERROR_ARGS(("The owner %d lost the cache line for addr %d\n", node, pc.addr));
@@ -587,13 +599,8 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                 // REPLY queue is full
                                 to_buffer(REPLY, net_cmd);
                             }
-
-                            // reply to the dir with data
-                            // if dir is not the requestor
-                            if (gen_node(pc.addr) != src) {
-                                net_cmd.dest = gen_node(pc.addr);
-                                to_buffer(REPLY, net_cmd);
-                            }
+  
+                            copy_cache_line(mem[lcl], pc.data);
 
                         } else {
                             // If the owner is other nodes, 
@@ -666,10 +673,14 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                             uint temp = ~(1 << node);
                                             dir[lcl].shared_nodes &= temp;
                                         } else {
-                                            // enqueue to the local queue if REQUEST queue is full, for invalidations
                                             bool enqueue_status = net->to_net(node, REQUEST, net_cmd_inv);
                                             if (!enqueue_status) {
-                                                to_net_inv_q.push_back(net_cmd_inv);
+                                                // enqueue to the invalidation queue
+                                                NOTE_ARGS(("Enqueued to the invalidation queue, from node %d to node %d", node, i_node))
+                                                iu_inv_queue_t inv_queue_element;
+                                                inv_queue_element.net_cmd = net_cmd_inv;
+                                                inv_queue_element.broadcast_tag = pc.addr;
+                                                to_net_inv_q.push_back(inv_queue_element);
                                             }
                                         }
                                     }
@@ -801,7 +812,7 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                     response_t r = cache->snoop(net_cmd);
                     // can't return the data back for now
                     // have to access cache for data
-                    forward_cmd_p = false;
+
                     if (!r.hit_p) {
                         // if cache miss, return non-ack response to the source
                         NOTE_ARGS(("The owner %d has lost the cache line for addr %d\n", node, pc.addr));
@@ -845,12 +856,12 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                             }
                         }
                     }
+
                 } else if (pc.permit_tag == MODIFIED) {
                     forward_cmd_p = true;
                     response_t r = cache->snoop(net_cmd);
                     // can't return the data back for now
                     // have to access cache for data
-                    forward_cmd_p = false;
 
                     if (!r.hit_p) {
                         // if cache miss, return non-ack response to the source
@@ -989,6 +1000,7 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
     int lcl = gen_local_cache_line(pc.addr);
 
     bool forwarded = (node == gen_node(pc.addr)); // 1: forwarded, 0: not forwarded
+    NOTE_ARGS(("Node %d, saw bus op %d reply from node %d", node, pc.busop, net_cmd.src));
 
     switch (pc.busop) {
         case (READ): {

@@ -91,6 +91,11 @@ typedef struct {
     net_cmd_t net_cmd;
 } iu_net_buffer_t;
 
+typedef struct {
+    address_tag_t broadcast_tag;
+    net_cmd_t net_cmd;
+} iu_inv_queue_t;
+
 typedef proc_cmd_t forward_cmd_t;
 
 extern int cur_cycle;

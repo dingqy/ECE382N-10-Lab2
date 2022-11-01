@@ -43,14 +43,11 @@ class iu_t {
     dir_t dir[MEM_SIZE];
 
     // queue: node -> network
-    my_fifo_t <net_cmd_t> to_net_inv_q;
+    my_fifo_t <iu_inv_queue_t> to_net_inv_q;
 
     // for foward network requests
     bool forward_cmd_p;
     forward_cmd_t forward_net_cmd;
-
-    // for retry
-    bool  proc_cmd_retry_p;
 
     // buffers to queues
     iu_net_buffer_t net_buffer[1]; // possible to enqueue 2 net_cmd per cycle
