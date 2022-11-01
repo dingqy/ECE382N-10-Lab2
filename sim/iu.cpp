@@ -733,14 +733,50 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                 to_buffer(REPLY, net_cmd);
                             }
                         } else {
-                            // the requestor is not one of sharers, forward the request to the owner
-                            // the src remains the same, the dest changes to the actural owner
-                            net_cmd.dest = dir[lcl].owner;
+                            // the requestor is not one of sharers, 
+                            if (node == dir[lcl].owner) {
+                                // the owner is the node
 
-                            bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
-                            if (!enqueue_status) {
-                                // FORWARD queue is full
-                                to_buffer(FORWARD, net_cmd);
+                                // If the owner is current node, 
+                                // access the cache to get the newest copy, downgrade the cache state,
+                                // change the directory state to be Shared, and update sharer list.
+
+                                forward_cmd_p = true;
+                                response_t r = cache->snoop(net_cmd);
+                                // can't return the data back for now
+                                // have to access cache for data
+
+                                if (!r.hit_p) {
+                                    ERROR_ARGS(("The owner %d lost the cache line for addr %d\n", node, pc.addr));
+                                }
+
+                                dir[lcl].state = DIR_OWNED;
+                                dir[lcl].shared_nodes = (1 << src);
+
+                                copy_cache_line(pc.data, forward_net_cmd.data);
+                                net_cmd.proc_cmd = pc;
+
+                                net_cmd.dest = src; // reply to the requestor with data
+
+                                bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                                if (!enqueue_status) {
+                                    // REPLY queue is full
+                                    to_buffer(REPLY, net_cmd);
+                                }
+    
+                                copy_cache_line(mem[lcl], pc.data);
+
+                            } else {
+                                // the owner is not the node
+                                // forward the request to the owner
+                                // the src remains the same, the dest changes to the actural owner
+                                net_cmd.dest = dir[lcl].owner;
+
+                                bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
+                                if (!enqueue_status) {
+                                    // FORWARD queue is full
+                                    to_buffer(FORWARD, net_cmd);
+                                }
                             }
                         }
                     } else { // dir[lcl].state == INVALID
