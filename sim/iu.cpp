@@ -717,7 +717,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
 
                     } else if (dir[lcl].state == DIR_OWNED) {
                         if (src == dir[lcl].owner) {
-                            ERROR("should not see this proc request, the node is already the owner");
+                            ERROR("should not see this network request, the node is already the owner");
 
                         } else if ((dir[lcl].shared_nodes >> src) & 0x1) {
                             // the requestor is one of sharers
@@ -1138,7 +1138,7 @@ int iu_t::get_mem(int addr) {
 }
 
 void iu_t::to_buffer(pri_t pri, net_cmd_t net_cmd) {
-    if (net_buffer[0].valid || net_buffer[1].valid) {
+    if (net_buffer[0].valid && net_buffer[1].valid) {
         ERROR("net_buffer: pending request got overwritten");
         return;
     }
