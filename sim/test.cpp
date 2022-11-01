@@ -679,7 +679,7 @@ void init_test() {
         case 30:
             for (int i = 0; i < 32; i++) {
                 test_args[i].random_generator.seed(i * 10);
-                test_args[i].addr_range = 32768;
+                test_args[i].addr_range = 32767;
             }
             break;
         case 31:
@@ -722,6 +722,7 @@ void init_test() {
 
             test_args[1].test_records.emplace_back(113, test_record_t{false, 0x00000101});
             test_args[1].test_goldens.emplace_back(113, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x200, 0xA, 0x0});
+            break;
         case 33:
             test_args[1].test_cases.emplace_back(0, test_case_t{true, 2, 0});
             test_args[2].test_cases.emplace_back(0, test_case_t{false, 5, 0});
