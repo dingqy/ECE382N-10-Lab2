@@ -496,6 +496,9 @@ void init_test() {
             test_args[1].test_records.emplace_back(1000, test_record_t{false, 0x00000101});
             test_args[1].test_goldens.emplace_back(1000, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x100, 0xFFFFFFFF, 0x0});
 
+            test_args[1].test_records.emplace_back(1000, test_record_t{true, 0x00000101});
+            test_args[1].test_goldens.emplace_back(1000, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
+
             test_args[1].test_cases.emplace_back(1000, test_case_t{true, 0x00000101, 0x200});
             test_args[0].test_records.emplace_back(2000, test_record_t{true, 0x00000101});
             test_args[0].test_goldens.emplace_back(2000, test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
@@ -503,10 +506,99 @@ void init_test() {
                 test_args[i].test_records.emplace_back(2000, test_record_t{true, 0x00000101});
                 test_args[i].test_goldens.emplace_back(2000, test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
             }
+            for (int i = 0; i < 100; i++) {
+                test_args[1].test_records.emplace_back(1001 + i, test_record_t{true, 0x00000101});
+                test_args[1].test_goldens.emplace_back(1001 + i, test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
+            }
             test_args[1].test_records.emplace_back(2000, test_record_t{true, 0x00000101});
             test_args[1].test_goldens.emplace_back(2000, test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
             break;
+        case 28:
+            test_args[1].test_cases.emplace_back(0, test_case_t{true, 0x00000101, 0x100});
 
+            test_args[1].test_cases.emplace_back(0, test_case_t{true, 0x00000201, 0x100});
+            test_args[1].test_cases.emplace_back(0, test_case_t{true, 0x00000301, 0x100});
+            test_args[1].test_cases.emplace_back(0, test_case_t{true, 0x00000401, 0x100});
+            test_args[1].test_cases.emplace_back(0, test_case_t{true, 0x00000501, 0x100});
+            test_args[1].test_cases.emplace_back(0, test_case_t{true, 0x00000601, 0x100});
+            test_args[1].test_cases.emplace_back(0, test_case_t{true, 0x00000701, 0x100});
+            test_args[1].test_cases.emplace_back(0, test_case_t{true, 0x00000801, 0x100});
+            test_args[1].test_cases.emplace_back(0, test_case_t{true, 0x00000901, 0x100});
+            test_args[1].test_cases.emplace_back(0, test_case_t{true, 0x00000A01, 0x100});
+            test_args[2].test_cases.emplace_back(500, test_case_t{false, 0x00000201, 0x0});
+            test_args[3].test_cases.emplace_back(500, test_case_t{false, 0x00000301, 0x0});
+            test_args[4].test_cases.emplace_back(500, test_case_t{false, 0x00000401, 0x0});
+            test_args[5].test_cases.emplace_back(500, test_case_t{false, 0x00000501, 0x0});
+            test_args[6].test_cases.emplace_back(500, test_case_t{false, 0x00000601, 0x0});
+            test_args[7].test_cases.emplace_back(500, test_case_t{false, 0x00000701, 0x0});
+            test_args[8].test_cases.emplace_back(500, test_case_t{false, 0x00000801, 0x0});
+            test_args[9].test_cases.emplace_back(500, test_case_t{false, 0x00000901, 0x0});
+            test_args[10].test_cases.emplace_back(500, test_case_t{false, 0x00000A01, 0x0});
+
+            test_args[11].test_cases.emplace_back(0, test_case_t{true, 0x00000B01, 0x100});
+            test_args[11].test_cases.emplace_back(0, test_case_t{true, 0x00000C01, 0x100});
+            test_args[11].test_cases.emplace_back(0, test_case_t{true, 0x00000D01, 0x100});
+            test_args[11].test_cases.emplace_back(0, test_case_t{true, 0x00000E01, 0x100});
+            test_args[11].test_cases.emplace_back(0, test_case_t{true, 0x00000F01, 0x100});
+            test_args[11].test_cases.emplace_back(0, test_case_t{true, 0x00001001, 0x100});
+            test_args[11].test_cases.emplace_back(0, test_case_t{true, 0x00001101, 0x100});
+            test_args[11].test_cases.emplace_back(0, test_case_t{true, 0x00001201, 0x100});
+            test_args[11].test_cases.emplace_back(0, test_case_t{true, 0x00001301, 0x100});
+            test_args[12].test_cases.emplace_back(500, test_case_t{false, 0x00000B01, 0x0});
+            test_args[13].test_cases.emplace_back(500, test_case_t{false, 0x00000C01, 0x0});
+            test_args[14].test_cases.emplace_back(500, test_case_t{false, 0x00000D01, 0x0});
+            test_args[15].test_cases.emplace_back(500, test_case_t{false, 0x00000E01, 0x0});
+            test_args[16].test_cases.emplace_back(500, test_case_t{false, 0x00000F01, 0x0});
+            test_args[17].test_cases.emplace_back(500, test_case_t{false, 0x00001001, 0x0});
+            test_args[18].test_cases.emplace_back(500, test_case_t{false, 0x00001101, 0x0});
+            test_args[19].test_cases.emplace_back(500, test_case_t{false, 0x00001201, 0x0});
+            test_args[20].test_cases.emplace_back(500, test_case_t{false, 0x00001301, 0x0});
+
+            test_args[31].test_cases.emplace_back(1000, test_case_t{true, 0x00005F01, 0x100});
+            for (int i = 0; i < 31; i++) {
+                test_args[i].test_cases.emplace_back(1000, test_case_t{false, 0x00005F01, 0x0});
+            }
+
+            test_args[31].test_records.emplace_back(1500, test_record_t{false, 0x00005F01});
+            test_args[31].test_goldens.emplace_back(1500, test_result_t{INVALID, DIR_SHARED, 0x00005F01, 0x100, 0xFFFFFFFF, 0x0});
+
+            test_args[31].test_cases.emplace_back(1500, test_case_t{true, 0x00003F01, 0x200});
+            for (int i = 0; i < 31; i++) {
+                test_args[i].test_cases.emplace_back(1500, test_case_t{false, 0x00003F01, 0x0});
+            }
+
+            test_args[31].test_records.emplace_back(2000, test_record_t{false, 0x00003F01});
+            test_args[31].test_goldens.emplace_back(2000, test_result_t{INVALID, DIR_SHARED, 0x00003F01, 0x200, 0xFFFFFFFF, 0x0});
+
+            test_args[2].test_cases.emplace_back(2000, test_case_t{true, 0x00000201, 0x0});
+            test_args[3].test_cases.emplace_back(2000, test_case_t{true, 0x00000301, 0x0});
+            test_args[4].test_cases.emplace_back(2000, test_case_t{true, 0x00000401, 0x0});
+            test_args[5].test_cases.emplace_back(2000, test_case_t{true, 0x00000501, 0x0});
+            test_args[6].test_cases.emplace_back(2000, test_case_t{true, 0x00000601, 0x0});
+            test_args[7].test_cases.emplace_back(2000, test_case_t{true, 0x00000701, 0x0});
+            test_args[8].test_cases.emplace_back(2000, test_case_t{true, 0x00000801, 0x0});
+            test_args[9].test_cases.emplace_back(2000, test_case_t{true, 0x00000901, 0x0});
+            test_args[10].test_cases.emplace_back(2000, test_case_t{true, 0x00000A01, 0x0});
+
+            test_args[12].test_cases.emplace_back(2000, test_case_t{true, 0x00000B01, 0x0});
+            test_args[13].test_cases.emplace_back(2000, test_case_t{true, 0x00000C01, 0x0});
+            test_args[14].test_cases.emplace_back(2000, test_case_t{true, 0x00000D01, 0x0});
+            test_args[15].test_cases.emplace_back(2000, test_case_t{true, 0x00000E01, 0x0});
+            test_args[16].test_cases.emplace_back(2000, test_case_t{true, 0x00000F01, 0x0});
+            test_args[17].test_cases.emplace_back(2000, test_case_t{true, 0x00001001, 0x0});
+            test_args[18].test_cases.emplace_back(2000, test_case_t{true, 0x00001101, 0x0});
+            test_args[19].test_cases.emplace_back(2000, test_case_t{true, 0x00001201, 0x0});
+            test_args[20].test_cases.emplace_back(2000, test_case_t{true, 0x00001301, 0x0});
+
+            test_args[31].test_cases.emplace_back(2000, test_case_t{true, 0x00005F01, 0x300});
+            test_args[31].test_cases.emplace_back(2000, test_case_t{true, 0x00003F01, 0x400});
+
+            test_args[31].test_records.emplace_back(3000, test_record_t{true, 0x00005F01});
+            test_args[31].test_goldens.emplace_back(3000, test_result_t{MODIFIED, DIR_INVALID, 0x00005F01, 0x300, 0x0, 0x0});
+
+            test_args[31].test_records.emplace_back(3000, test_record_t{true, 0x00003F01});
+            test_args[31].test_goldens.emplace_back(3000, test_result_t{MODIFIED, DIR_INVALID, 0x00003F01, 0x400, 0x0, 0x0});
+            break;
         default: ERROR("don't recognize this test");
     }
 }
@@ -554,6 +646,7 @@ void finish_test() {
             case 24:
             case 25:
             case 26:
+            case 28:
                 std::cout << "Processor: " << i << " Checking..." << std::endl;
                 for (int j = 0; j < test_args[i].test_goldens.size(); j++) {
                     std::cout << "Processor: " << i << " Checking record " << j << std::endl;
