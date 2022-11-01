@@ -406,8 +406,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
                 } else if (dir[lcl].state == DIR_OWNED) {
                     // owned: copy the data into memory and change directory state to be Invalid
-                    if (dir[lcl].owner != node) {
-                        ERROR_ARGS(("Non-owner write-back: owner %d, node %d\n", dir[lcl].owner, node));
+                    if ((dir[lcl].shared_nodes >> node) & 0x1 == 0) {
+                        ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
                     }
                     copy_cache_line(mem[lcl], pc.data);
                     dir[lcl].state = DIR_INVALID;
@@ -979,15 +979,15 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
 
             } else if (dir[lcl].state == DIR_OWNED) {
                 // owned: copy the data into memory and change directory state to be Invalid
-                if (dir[lcl].owner != src) {
-                    ERROR_ARGS(("Non-owner write-back: owner %d, node %d\n", dir[lcl].owner, node));
+                if ((dir[lcl].shared_nodes >> src) & 0x1 == 0) {
+                    ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
                 }
                 copy_cache_line(mem[lcl], pc.data);
                 dir[lcl].state = DIR_INVALID;
                 dir[lcl].shared_nodes = 0;
             } else if (dir[lcl].state == DIR_SHARED_NO_DATA) {
-                if (dir[lcl].owner != src) {
-                    ERROR_ARGS(("Non-owner write-back: owner %d, node %d\n", dir[lcl].owner, node));
+                if ((dir[lcl].shared_nodes >> src) & 0x1 == 0) {
+                    ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
                 }
                 copy_cache_line(mem[lcl], pc.data);
                 dir[lcl].state = DIR_INVALID;
