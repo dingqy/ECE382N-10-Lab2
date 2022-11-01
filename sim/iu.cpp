@@ -295,8 +295,6 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         // If it is shared with other nodes, send invalidates to all sharers
                         if (dir[lcl].shared_nodes == 0) {
                             ERROR("sharer list should not be zero");
-                        } else if (check_onehot(dir[lcl].shared_nodes)) {
-                            ERROR("should have at least two sharers");
                         }
 
                         if (to_net_inv_q.space() < count_bits(dir[lcl].shared_nodes)) {
