@@ -144,22 +144,26 @@ void proc_t::bind(cache_t *c) {
  *  - Invalidation 31 nodes (Local)
  *
  * Case 27:
- *  - Queue 1 (Send buffer full)
+ *  - Directory Shared (Global) -> Write request -> Invalidation
+ *                                                  Read request -> Retry/Resubmit
  *
  * Case 28:
  *  - Queue 2 (Invalidation queue full)
  *  - Ownership and directory node same (Owned -> Shared-No-data -> Shared)
  *
  * Case 29:
- *  - Directory shared -> Write request -> Invalidation          -> Node non-ack (Cache miss)    -> No more action
+ *  - Directory shared (Global) -> Write request -> Invalidation          -> Node non-ack (Cache miss)    -> No more action
  *  -                                        Write back (Shared) -> Directory update sharer list
- *
  * --------------------------------------------------------------------------------------------------------------
  * Case 30:
  *  - Random
  *
  * Case 31:
  *  - Directory Owned (with owner) -> Read request -> Node reply (Memory write) -> Shared in both caches
+ *
+ * Case 32:
+ *  - Directory Shared (Local) -> Write request -> Invalidation
+ *                                                  Read request -> Retry/Resubmit
  * --------------------------------------------------------------------------------------------------------------
  */
 void proc_t::advance_one_cycle() {
@@ -210,12 +214,11 @@ void proc_t::advance_one_cycle() {
         case 24:
         case 25:
         case 26:
+        case 27:
         case 28:
+        case 29:
         case 31:
         case 32:
-        case 33:
-        case 34:
-        case 35:
             if (case_index < test_set.test_cases.size()) {
                 if (cur_cycle >= test_set.test_cases[case_index].first) {
                     if (test_set.test_cases[case_index].second.write) {
