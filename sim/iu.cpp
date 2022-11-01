@@ -751,6 +751,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                 }
 
                                 dir[lcl].state = DIR_OWNED;
+                                dir[lcl].owner = src;
                                 dir[lcl].shared_nodes = (1 << src);
 
                                 copy_cache_line(pc.data, forward_net_cmd.data);
