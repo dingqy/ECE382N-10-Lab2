@@ -1027,8 +1027,8 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
  *  2. Read request ack (Not forwarded request)
  *      x Fill cache (may trigger replacement write back)
  *      x End the processor command processing signal
- *  3. Invalidation request non-ack (Impossible)
- *      x Retry
+ *  3. Invalidation request non-ack
+ *      x No further action
  *  4. Write request ack (Not forwarded request)
  *      x Write back
  *          - Evict the victim (Not implemented, no ack expected)
