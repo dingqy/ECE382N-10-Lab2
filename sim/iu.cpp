@@ -417,6 +417,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                 // WRBACK queue is full
                 to_buffer(WRBACK, net_cmd);
             }
+            proc_cmd_p = false; // clear proc_cmd
+
         } else {
             bool enqueue_status = net->to_net(node, REQUEST, net_cmd);
             if (!enqueue_status) {
