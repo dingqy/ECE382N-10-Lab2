@@ -665,8 +665,8 @@ void init_test() {
             test_args[0].test_cases.emplace_back(56, test_case_t{false, 0x00006001, 0x0});
             test_args[0].test_cases.emplace_back(58, test_case_t{false, 0x00008001, 0x0});
 
-            test_args[1].test_records.emplace_back(69, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(69,
+            test_args[1].test_records.emplace_back(70, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(70,
                                                    test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x4, 0x2});
 
             test_args[1].test_records.emplace_back(81, test_record_t{false, 0x00000101});
@@ -721,7 +721,7 @@ void init_test() {
             test_args[1].test_goldens.emplace_back(113, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
 
             test_args[1].test_records.emplace_back(113, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(113, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x200, 0x18, 0x0});
+            test_args[1].test_goldens.emplace_back(113, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x200, 0xA, 0x0});
             break;
         default: ERROR("don't recognize this test");
     }
