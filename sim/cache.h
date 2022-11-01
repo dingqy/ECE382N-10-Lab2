@@ -91,6 +91,8 @@ public:
 
     void write_data(address_t addr, cache_access_response_t car, int data);
 
+    permit_tag_t get_permit_tag(int set, int way);
+
     // replacement
     cache_access_response_t lru_replacement(address_t addr);
 
