@@ -484,7 +484,7 @@ response_t cache_t::snoop(net_cmd_t net_cmd) {
         if (net_cmd.proc_cmd.busop == INVALIDATE) {
             // invalidate itself
             tags[car.set][car.way].permit_tag = INVALID;
-            tags[car.set][car.way].replacement = -1;
+            touch_replacement(car);
             NOTE_ARGS(("Node %d cache saw INVALIDATE request from node %d at addr %d, invalidated itself", node, net_cmd.src, new_pc.addr));
 
         } else if (net_cmd.proc_cmd.busop == READ) {
@@ -494,7 +494,7 @@ response_t cache_t::snoop(net_cmd_t net_cmd) {
             if (net_cmd.proc_cmd.permit_tag == MODIFIED) {
                 // invalidate itself
                 tags[car.set][car.way].permit_tag = INVALID;
-                tags[car.set][car.way].replacement = -1;
+                touch_replacement(car);
                 NOTE_ARGS(("Node %d cache saw RWITM from node %d at addr %d, invalidated itself", node, net_cmd.src, new_pc.addr));
             } else {
                 // downgrade itself
