@@ -156,6 +156,9 @@ void proc_t::bind(cache_t *c) {
  * --------------------------------------------------------------------------------------------------------------
  * Case 30:
  *  - Random
+ *
+ * Case 31:
+ *  - Directory Owned (with owner) -> Read request -> Node reply (Memory write) -> Shared in both caches
  * --------------------------------------------------------------------------------------------------------------
  */
 void proc_t::advance_one_cycle() {

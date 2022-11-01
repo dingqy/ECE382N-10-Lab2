@@ -559,10 +559,8 @@ void init_test() {
                 test_args[i].test_cases.emplace_back(1000, test_case_t{false, 0x00005F21, 0x0});
             }
 
-//            for (int i = 0; i < 500; i++) {
-//                test_args[31].test_records.emplace_back(1011 + i, test_record_t{false, 0x00005F21});
-//                test_args[31].test_goldens.emplace_back(1011 + i, test_result_t{INVALID, DIR_SHARED, 0x00005F21, 0x100, 0xFFFFFFFF, 0x0});
-//            }
+            test_args[31].test_records.emplace_back(1500, test_record_t{false, 0x00005F21});
+            test_args[31].test_goldens.emplace_back(1500, test_result_t{INVALID, DIR_SHARED, 0x00005F21, 0x100, 0xFFFFFFFF, 0x0});
 
             test_args[31].test_cases.emplace_back(1500, test_case_t{true, 0x00003F21, 0x200});
             for (int i = 0; i < 31; i++) {
@@ -691,9 +689,9 @@ void finish_test() {
                         }
                     }
                     if (test_golden.mem_state == DIR_SHARED) {
-//                        if (test_result.sharer_list != test_golden.sharer_list) {
-//                            ERROR("Directory sharer list error (Shared)")
-//                        }
+                        if (test_result.sharer_list != test_golden.sharer_list) {
+                            ERROR("Directory sharer list error (Shared)")
+                        }
                     }
                     if (test_golden.mem_state == DIR_INVALID && test_golden.cache_state == INVALID) {
                         if (test_result.data != test_golden.data) {

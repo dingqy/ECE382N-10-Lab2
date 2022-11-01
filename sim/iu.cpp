@@ -850,6 +850,7 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                         if (forward_net_cmd.permit_tag == MODIFIED || forward_net_cmd.permit_tag == EXCLUSIVE) {
                             // reply to the dir with data
                             // if dir is not the requestor
+                            // TODO: ???
                             if (gen_node(pc.addr) != src) {
                                 net_cmd.dest = gen_node(pc.addr);
                                 to_buffer(REPLY, net_cmd);
@@ -897,6 +898,7 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         // reply to the dir with data
                         // if dir is not the requestor
+                        // TODO: ????
                         net_cmd.dest = gen_node(pc.addr);
                         if (gen_node(pc.addr) != src) {
                             net_cmd.dest = gen_node(pc.addr);
