@@ -700,25 +700,28 @@ void init_test() {
             test_args[1].test_cases.emplace_back(75, test_case_t{false, 0x00000101, 0x0});
 
             test_args[1].test_records.emplace_back(71, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(71, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x5, 0x2});
+            test_args[1].test_goldens.emplace_back(71, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0xD, 0x3});
 
             test_args[1].test_records.emplace_back(76, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(76, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x5, 0x2});
+            test_args[1].test_goldens.emplace_back(76, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0xD, 0x3});
 
             test_args[1].test_records.emplace_back(76, test_record_t{true, 0x00000101});
             test_args[1].test_goldens.emplace_back(76, test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x0, 0x0, 0x0});
 
-            test_args[1].test_records.emplace_back(91, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(91, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x4, 0x2});
+            test_args[1].test_records.emplace_back(92, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(92, test_result_t{INVALID, DIR_OWNED, 0x00000101, 0x100, 0x8, 0x3});
 
-            test_args[3].test_records.emplace_back(102, test_record_t{true, 0x00000101});
-            test_args[3].test_goldens.emplace_back(102, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
+            test_args[1].test_records.emplace_back(93, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(93, test_result_t{INVALID, DIR_SHARED_NO_DATA, 0x00000101, 0x100, 0x8, 0x3});
 
-            test_args[1].test_records.emplace_back(112, test_record_t{true, 0x00000101});
-            test_args[1].test_goldens.emplace_back(112, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
+            test_args[3].test_records.emplace_back(103, test_record_t{true, 0x00000101});
+            test_args[3].test_goldens.emplace_back(103, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
 
-            test_args[1].test_records.emplace_back(112, test_record_t{false, 0x00000101});
-            test_args[1].test_goldens.emplace_back(112, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x200, 0x18, 0x0});
+            test_args[1].test_records.emplace_back(113, test_record_t{true, 0x00000101});
+            test_args[1].test_goldens.emplace_back(113, test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
+
+            test_args[1].test_records.emplace_back(113, test_record_t{false, 0x00000101});
+            test_args[1].test_goldens.emplace_back(113, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x200, 0x18, 0x0});
             break;
         default: ERROR("don't recognize this test");
     }
