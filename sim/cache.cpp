@@ -153,7 +153,6 @@ bool cache_t::cache_access(address_t addr, permit_tag_t permit, cache_access_res
 
         }
     }
-
     car->permit_tag = INVALID;
     return (false);
 }
@@ -178,8 +177,8 @@ void cache_t::cache_fill(cache_access_response_t car, data_t data) {
     tags[car.set][car.way].address_tag = car.address_tag;
     tags[car.set][car.way].permit_tag = car.permit_tag;
 
-    NOTE_ARGS(("set tags[%d][%d].address_tag = %d", car.set, car.way, car.address_tag));
-    NOTE_ARGS(("set tags[%d][%d].permit_tag  = %d", car.set, car.way, car.permit_tag));
+    NOTE_ARGS(("Node# %d set tags[%d][%d].address_tag = %d", node, car.set, car.way, car.address_tag));
+    NOTE_ARGS(("Node# %d set tags[%d][%d].permit_tag  = %d", node, car.set, car.way, car.permit_tag));
 
     touch_replacement(car);
 
@@ -436,6 +435,7 @@ void cache_t::reply(proc_cmd_t proc_cmd) {
         replaced_wb = 1;
     }
     if (replaced_wb) {
+        NOTE_ARGS(("%d: WB replacing addr_tag %d into set %d, assoc %d", node, car.address_tag, car.set, car.way));
         uint replaced_addr = ((tags[car.set][car.way].address_tag) << address_tag_shift) | (car.set << set_shift);
         proc_cmd_t proc_cmd = (proc_cmd_t) {WRITE, replaced_addr, 0xFFFF, car.permit_tag};
         copy_cache_line(proc_cmd.data, tags[car.set][car.way].data);
@@ -479,12 +479,12 @@ response_t cache_t::snoop(net_cmd_t net_cmd) {
     if (cache_access(new_pc.addr, INVALID, &car)) {
         // hit
         resp.hit_p = true;
-        new_pc.permit_tag = tags[car.way][car.set].permit_tag;
+        new_pc.permit_tag = tags[car.set][car.way].permit_tag;
 
         if (net_cmd.proc_cmd.busop == INVALIDATE) {
             // invalidate itself
-            tags[car.way][car.set].permit_tag = INVALID;
-            tags[car.way][car.set].replacement = -1;
+            tags[car.set][car.way].permit_tag = INVALID;
+            tags[car.set][car.way].replacement = -1;
             NOTE_ARGS(("Node %d cache saw INVALIDATE request from node %d at addr %d, invalidated itself", node, net_cmd.src, new_pc.addr));
 
         } else if (net_cmd.proc_cmd.busop == READ) {
@@ -493,12 +493,12 @@ response_t cache_t::snoop(net_cmd_t net_cmd) {
 
             if (net_cmd.proc_cmd.permit_tag == MODIFIED) {
                 // invalidate itself
-                tags[car.way][car.set].permit_tag = INVALID;
-                tags[car.way][car.set].replacement = -1;
+                tags[car.set][car.way].permit_tag = INVALID;
+                tags[car.set][car.way].replacement = -1;
                 NOTE_ARGS(("Node %d cache saw RWITM from node %d at addr %d, invalidated itself", node, net_cmd.src, new_pc.addr));
             } else {
                 // downgrade itself
-                tags[car.way][car.set].permit_tag = SHARED;
+                tags[car.set][car.way].permit_tag = SHARED;
                 NOTE_ARGS(("Node %d cache saw READ request from node %d at addr %d", node, net_cmd.src, new_pc.addr));
             }
             iu->from_proc(new_pc);
