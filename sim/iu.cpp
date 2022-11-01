@@ -62,43 +62,22 @@ void iu_t::bind(cache_t *c, network_t *n) {
  */
 void iu_t::advance_one_cycle() {
     forward_cmd_p = false;
-    // clear pending buffers to queues
-    bool skip_cycle = false;
-    for (int ind = 0; ind < SIZE_IU_TO_NET_BUFFER; ind++) {
-        if (net_buffer[ind].valid) {
-            // invalidate the buffered reqest
-            bool enqueue_status = false;
 
-            switch (net_buffer[ind].pri) {
-                case (REPLY):
-                    enqueue_status = net->to_net(node, REPLY, net_buffer[ind].net_cmd);
-                    if (enqueue_status) net_buffer[ind].valid = 0;
-                    break;
-                case (WRBACK): {
-                    enqueue_status = net->to_net(node, WRBACK, net_buffer[ind].net_cmd);
-                    if (enqueue_status) net_buffer[ind].valid = 0;
-                    break;
-                }
-                case (FORWARD): {
-                    enqueue_status = net->to_net(node, FORWARD, net_buffer[ind].net_cmd);
-                    if (enqueue_status) net_buffer[ind].valid = 0;
-                    break;
-                }
-                case (REQUEST): {
-                    enqueue_status = net->to_net(node, REQUEST, net_buffer[ind].net_cmd);
-                    if (enqueue_status) net_buffer[ind].valid = 0;
-                    break;
-                }
-            }
+    bool enqueue_status = false;
+    if (net_buffer[0].valid || net_buffer[1].valid) {
+        // clear pending buffers first
+        if (net_buffer[0].valid) {
+            enqueue_status = net->to_net(node, net_buffer[0].pri, net_buffer[0].net_cmd);
             if (enqueue_status) {
-                // one request each cycle
-                skip_cycle = true;
-                break;
+                net_buffer[0].valid = 0;
             }
-        }
-    }
-
-    if (!skip_cycle) {
+        } else {
+            enqueue_status = net->to_net(node, net_buffer[1].pri, net_buffer[1].net_cmd);
+            if (enqueue_status) {
+                net_buffer[1].valid = 0;
+            }
+        }        
+    } else {
         // fixed priority: reply from network
         if (net->from_net_p(node, REPLY)) {
             process_net_reply(net->from_net(node, REPLY));
@@ -1006,6 +985,8 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
                         dir[lcl].shared_nodes = 0;
                     }                    
                 }             
+            } else if (dir[lcl].state == DIR_INVALID) {
+                // do nothing
             } else {
                 ERROR_ARGS(("invalid directory state seen at node %d\n", node));
             }
