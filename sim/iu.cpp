@@ -984,7 +984,7 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
                 } else {
                     if (dir[lcl].owner != src) {
                         // shared: update sharer list
-                        uint temp = ~(1 << node);
+                        uint temp = ~(1 << src);
                         dir[lcl].shared_nodes &= temp;
                     } else {
                         copy_cache_line(mem[lcl], pc.data);
@@ -998,7 +998,7 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
                 } else {
                     if (dir[lcl].owner != src) {
                         // shared: update sharer list
-                        uint temp = ~(1 << node);
+                        uint temp = ~(1 << src);
                         dir[lcl].shared_nodes &= temp;
                     } else {
                         copy_cache_line(mem[lcl], pc.data);
