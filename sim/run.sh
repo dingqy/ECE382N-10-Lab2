@@ -2,7 +2,7 @@
 NUM_NODES=$1
 NUM_CYCLE=$2
 NUM_TESTS=$3
-VERBOSE=$3
+VERBOSE=$4
 
 COUNT=1
 
@@ -18,5 +18,8 @@ do
 
 done
 
+((COUNT--))
+
 echo "ALL test cases passed"
+echo "Total number of test cases" $COUNT
 exit 0
