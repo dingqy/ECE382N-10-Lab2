@@ -607,6 +607,15 @@ void init_test() {
                 test_args[i].addr_range = 767;
             }
             break;
+        case 31:
+            test_args[31].test_cases.emplace_back(0, test_case_t{true, 0x00003F21, 0x200});
+            for (int i = 0; i < 31; i++) {
+                test_args[i].test_cases.emplace_back(0, test_case_t{false, 0x00003F21, 0x0});
+            }
+
+            test_args[31].test_records.emplace_back(500, test_record_t{false, 0x00003F21});
+            test_args[31].test_goldens.emplace_back(500, test_result_t{INVALID, DIR_SHARED, 0x00003F21, 0x200, 0xFFFFFFFF, 0x0});
+            break;
         default: ERROR("don't recognize this test");
     }
 }
@@ -656,6 +665,7 @@ void finish_test() {
             case 26:
             case 28:
             case 30:
+            case 31:
                 std::cout << "Processor: " << i << " Checking..." << std::endl;
                 for (int j = 0; j < test_args[i].test_goldens.size(); j++) {
                     std::cout << "Processor: " << i << " Checking record " << j << std::endl;
