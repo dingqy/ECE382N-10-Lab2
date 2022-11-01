@@ -223,6 +223,15 @@ void proc_t::advance_one_cycle() {
                 }
             }
             break;
+        case 30:
+            if (!response.retry_p) {
+                std::uniform_int_distribution<int> distribution{0, test_args[proc].addr_range};
+                addr = distribution(test_args[proc].random_generator);
+                ld_p = ((random() % 2) == 0);
+            }
+            if (ld_p) response = cache->load(addr, 0, &data, response.retry_p);
+            else response = cache->store(addr, 0, cur_cycle, response.retry_p);
+            break;
         default: ERROR("don't know this test case");
     }
 

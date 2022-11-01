@@ -599,6 +599,12 @@ void init_test() {
             test_args[31].test_records.emplace_back(3000, test_record_t{true, 0x00003F01});
             test_args[31].test_goldens.emplace_back(3000, test_result_t{MODIFIED, DIR_INVALID, 0x00003F01, 0x400, 0x0, 0x0});
             break;
+        case 30:
+            for (int i = 0; i < 32; i++) {
+                test_args[i].random_generator.seed(i * 10);
+                test_args[i].addr_range = 767;
+            }
+            break;
         default: ERROR("don't recognize this test");
     }
 }
@@ -647,6 +653,7 @@ void finish_test() {
             case 25:
             case 26:
             case 28:
+            case 30:
                 std::cout << "Processor: " << i << " Checking..." << std::endl;
                 for (int j = 0; j < test_args[i].test_goldens.size(); j++) {
                     std::cout << "Processor: " << i << " Checking record " << j << std::endl;
