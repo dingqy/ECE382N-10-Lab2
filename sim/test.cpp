@@ -614,6 +614,42 @@ void init_test() {
             test_args[31].test_records.emplace_back(500, test_record_t{false, 0x00003F21});
             test_args[31].test_goldens.emplace_back(500, test_result_t{INVALID, DIR_SHARED, 0x00003F21, 0x200, 0xFFFFFFFF, 0x0});
             break;
+        case 32:
+            test_args[1].test_cases.emplace_back(0, test_case_t{true, 0x0, 0x0});
+            test_args[2].test_cases.emplace_back(0, test_case_t{false, 0x0, 0x0});
+            test_args[3].test_cases.emplace_back(0, test_case_t{true, 0x0, 0x0});
+            test_args[4].test_cases.emplace_back(0, test_case_t{true, 0x0, 0x0});
+            test_args[5].test_cases.emplace_back(0, test_case_t{true, 0x0, 0x0});
+            test_args[6].test_cases.emplace_back(0, test_case_t{true, 0x0, 0x0});
+            test_args[7].test_cases.emplace_back(0, test_case_t{false, 0x0, 0x0});
+            test_args[8].test_cases.emplace_back(0, test_case_t{false, 0x0, 0x0});
+            test_args[9].test_cases.emplace_back(0, test_case_t{true, 0x0, 0x0});
+            test_args[10].test_cases.emplace_back(0, test_case_t{true, 0x0, 0x0});
+            test_args[11].test_cases.emplace_back(0, test_case_t{false, 0x0, 0x0});
+            test_args[12].test_cases.emplace_back(0, test_case_t{true, 0x0, 0x0});
+            test_args[13].test_cases.emplace_back(0, test_case_t{false, 0x0, 0x0});
+            test_args[14].test_cases.emplace_back(0, test_case_t{true, 0x0, 0x0});
+            test_args[15].test_cases.emplace_back(0, test_case_t{true, 0x0, 0x0});
+            test_args[16].test_cases.emplace_back(0, test_case_t{false, 0x0, 0x0});
+            test_args[17].test_cases.emplace_back(0, test_case_t{false, 0x1, 0x0});
+            test_args[18].test_cases.emplace_back(0, test_case_t{false, 0x1, 0x0});
+            test_args[19].test_cases.emplace_back(0, test_case_t{false, 0x1, 0x0});
+            test_args[20].test_cases.emplace_back(0, test_case_t{false, 0x1, 0x0});
+            test_args[21].test_cases.emplace_back(0, test_case_t{true, 0x1, 0x0});
+            test_args[22].test_cases.emplace_back(0, test_case_t{false, 0x1, 0x0});
+            test_args[23].test_cases.emplace_back(0, test_case_t{true, 0x1, 0x0});
+            test_args[24].test_cases.emplace_back(0, test_case_t{true, 0x1, 0x0});
+            test_args[25].test_cases.emplace_back(0, test_case_t{false, 0x1, 0x0});
+            test_args[26].test_cases.emplace_back(0, test_case_t{false, 0x1, 0x0});
+            test_args[27].test_cases.emplace_back(0, test_case_t{false, 0x1, 0x0});
+            test_args[28].test_cases.emplace_back(0, test_case_t{true, 0x1, 0x0});
+            test_args[29].test_cases.emplace_back(0, test_case_t{true, 0x1, 0x0});
+            test_args[30].test_cases.emplace_back(0, test_case_t{true, 0x1, 0x0});
+            test_args[31].test_cases.emplace_back(0, test_case_t{true, 0x1, 0x0});
+            test_args[0].test_cases.emplace_back(0, test_case_t{false, 0x0, 0x0});
+            test_args[0].test_cases.emplace_back(2, test_case_t{false, 101, 0x0});
+            test_args[0].test_cases.emplace_back(4, test_case_t{false, 580, 0x0});
+            break;
         default: ERROR("don't recognize this test");
     }
 }
@@ -664,6 +700,7 @@ void finish_test() {
             case 28:
             case 30:
             case 31:
+            case 32:
                 std::cout << "Processor: " << i << " Checking..." << std::endl;
                 for (int j = 0; j < test_args[i].test_goldens.size(); j++) {
                     std::cout << "Processor: " << i << " Checking record " << j << std::endl;
