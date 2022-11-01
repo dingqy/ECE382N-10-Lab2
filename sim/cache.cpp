@@ -294,8 +294,6 @@ response_t cache_t::load(address_t addr, bus_tag_t tag, int *data, bool retried_
     cache_access_response_t car;
     int a;
 
-    cache_access(addr, SHARED, &car);
-
     // Cache hit (No retry, hit status update)
     // Retry hit is not actual hit
     // Tag access and comparison
@@ -475,8 +473,6 @@ response_t cache_t::snoop(net_cmd_t net_cmd) {
 
     response_t resp;
     cache_access_response_t car;
-
-    cache_access(new_pc.addr, INVALID, &car);
 
     resp.retry_p = false; //TODO: Not sure about retry_p
 
