@@ -26,9 +26,8 @@ class iu_t {
     network_t *net;
 
     bool proc_cmd_p;
-    proc_cmd_t proc_cmd;
-
     bool proc_cmd_processed_p;
+    iu_proc_cmd_buffer_t proc_cmd_buffer[1];
 
     // processor side
     bool process_proc_request(proc_cmd_t proc_cmd);
@@ -77,8 +76,11 @@ public:
     int get_mem(int addr);
 
     // buffer request
-    void to_buffer(pri_t pri, net_cmd_t net_cmd);
+    void to_net_buffer(pri_t pri, net_cmd_t net_cmd);
+    void from_proc_cmd_buffer(bool ind, proc_cmd_t proc_cmd);
 
+    bool proc_cmd_buffer_p(); 
+    proc_cmd_t get_proc_cmd();
 };
 
 #endif

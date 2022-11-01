@@ -57,7 +57,7 @@ network_t::network_t(int p) {
  */
 bool network_t::to_net(int src_port, pri_t pri, net_cmd_t cmd) {
 
-    NOTE_ARGS(("sending from %d to %d", src_port, cmd.dest));
+    // NOTE_ARGS(("sending from %d to %d", src_port, cmd.dest));
 
     // src_port is not needed in this implementation, but may eventually
     // be needed, so we have it here.
@@ -65,7 +65,10 @@ bool network_t::to_net(int src_port, pri_t pri, net_cmd_t cmd) {
     // just enqueue into appropriate fifo if possible
 
     bool space_p = from_net_fifos[pri][cmd.dest]->space_p();
-    if (space_p) from_net_fifos[pri][cmd.dest]->tenqueue(cur_cycle + NETWORK_LATENCY, cmd);
+    if (space_p) {
+        from_net_fifos[pri][cmd.dest]->tenqueue(cur_cycle + NETWORK_LATENCY, cmd);
+        NOTE_ARGS(("sended from %d to %d", src_port, cmd.dest));
+    }
 
     return (space_p);
 
