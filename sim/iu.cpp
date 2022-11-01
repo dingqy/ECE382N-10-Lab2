@@ -243,27 +243,32 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         // If it is owned by other nodes, it needs to generate a net_cmd and forward the proc_cmd
                         if (dir[lcl].owner == node) {
                             ERROR("should not see this proc request, the node is already the owner");
+                        } else if (dir[lcl].shared_nodes != (1 << dir[lcl].owner)) {
+                            NOTE_ARGS(("Waiting for Inv-ack to come back, dir %d, requestor %d", node, node));
+                            // let the processor retry
+                            proc_cmd_processed_p = false;
+                        } else {
+
+                            net_cmd_t net_cmd;
+                            net_cmd.src = node;
+                            net_cmd.dest = dir[lcl].owner;
+                            net_cmd.proc_cmd = pc;
+                            net_cmd.valid_p = 1;
+
+                            bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
+                            if (!enqueue_status) {
+                                // FORWARD queue is full
+                                to_buffer(FORWARD, net_cmd);
+                            }
+
+                            // temporarily set dir state to DIR_SHARED_NO_DATA
+                            // in case write requests come and we need to send invalidates
+                            dir[lcl].state = DIR_SHARED_NO_DATA;
+
+                            // no cache reply for now
+                            // don't clear proc_cmd for now
+                            // dir state won't be SHARED for now
                         }
-
-                        net_cmd_t net_cmd;
-                        net_cmd.src = node;
-                        net_cmd.dest = dir[lcl].owner;
-                        net_cmd.proc_cmd = pc;
-                        net_cmd.valid_p = 1;
-
-                        bool enqueue_status = net->to_net(node, FORWARD, net_cmd);
-                        if (!enqueue_status) {
-                            // FORWARD queue is full
-                            to_buffer(FORWARD, net_cmd);
-                        }
-
-                        // temporarily set dir state to DIR_SHARED_NO_DATA
-                        // in case write requests come and we need to send invalidates
-                        dir[lcl].state = DIR_SHARED_NO_DATA;
-
-                        // no cache reply for now
-                        // don't clear proc_cmd for now
-                        // dir state won't be SHARED for now
 
                     } else if (dir[lcl].state == DIR_SHARED_NO_DATA) {
                         // Forward request to the owner
@@ -367,7 +372,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         // don't clear proc_cmd for now    
 
                     } else if (dir[lcl].state == DIR_SHARED_NO_DATA) {
-                        // reply to the requestor with no-ack (net_cmd.valid_p)
+                        // let the processor retry
                         proc_cmd_processed_p = false;
                     } else {
                         ERROR_ARGS(("invalid directory state seen at node %d\n", node));
@@ -541,7 +546,18 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         }
 
                     } else if (dir[lcl].state == DIR_OWNED) {
-                        if (node == dir[lcl].owner) {
+                        if (dir[lcl].shared_nodes != (1 << dir[lcl].owner)) {
+                            NOTE_ARGS(("Waiting for Inv-ack to come back, dir %d, requestor %d", node, src));
+                            // send back no-ack to src
+                            net_cmd.valid_p = 0;
+                            net_cmd.dest = src;
+
+                            bool enqueue_status = net->to_net(node, REPLY, net_cmd);
+                            if (!enqueue_status) {
+                                // REPLY queue is full
+                                to_buffer(REPLY, net_cmd);
+                            }
+                        } else if (node == dir[lcl].owner) {
                             // If the owner is current node, 
                             // access the cache to get the newest copy, downgrade the cache state,
                             // change the directory state to be Shared, and update sharer list.
