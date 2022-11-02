@@ -24,7 +24,113 @@ test_args_t test_args[32];
 /**
  * Initialize the test address range
  *
- * TODO: ADD test here
+ * Test cases description
+ *
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 1:
+ *  - Directory Invalid -> Read request -> Exclusive in cache and Owned in directory (Local)
+ *
+ * Case 2:
+ *  - Directory Invalid -> Read request -> Network -> Node reply -> Exclusive in cache and Owned in directory (global)
+ *
+ * Case 3:
+ *  - Directory Invalid -> Write request -> Modified in cache and Owned in directory (Local)
+ *
+ * Case 4:
+ *  - Directory Invalid -> Write request -> Network -> Node reply -> Exclusive in cache and Owned in directory (global)
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 5:
+ *  - Directory Owned (Global) -> Read request -> Forward request -> Network -> Node reply (To directory and source) -> Shared in both caches and directory
+ *
+ * Case 6:
+ *  - Directory Owned (Local) -> Invalidate request (Write back) -> Copy data and Invalid state in directory
+ *
+ * Case 7:
+ *  - Directory Owned (Global) -> Write request (Write back) -> Copy data and Invalid state in directory
+ *
+ * Case 8:
+ *  - Directory Owned (Global) -> Write request -> Forward request -> Network -> Node reply (To directory and source) -> Modified in one cache, Invalid in other cache, and owner change in directory
+ *
+ * Case 9:
+ *  - Directory Owned (Local) -> Read request -> Forward request -> Network -> Node reply (To directory and source) -> Shared in both caches and directory
+ *
+ * Case 10:
+ *  - Directory Owned (Local) -> Write request -> Forward request -> Network -> Node reply (To directory and source) -> Modified in one cache, Invalid in other cache, and owner change in directory
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 11:
+ *  - Directory Shared (Global) -> Read request -> Node reply (To source) -> Shared in cache and sharer list update in directory
+ *
+ * Case 12:
+ *  - Directory Shared (Global) -> Write request -> Invalidation broadcast -> Node reply (To source) -> Invalidation ack -> Modified in cache, invalidation, and owned in directory
+ *
+ * Case 13:
+ *  - Directory Shared (Global) -> Write request (write back) -> Update sharer list
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 14:
+ *  - Directory Shared-no-data -> Read request -> Forward request -> Node reply (To directory and source) -> Shared in cache and sharer list update
+ *
+ * Case 15:
+ *  - Directory Shared-no-data -> Write request (write back) -> Invalid in directory
+ *  -                                           Read request -> Forward request -> Retry/Resubmit -> Exclusive in cache and owned in directory
+ *
+ * Case 16:
+ *  - Directory shared-no-data -> Write request -> Resubmit -> Directory shared -> invalidation -> Modified in cache and owned in directory
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 17:
+ *  - Directory Shared (Local) -> Read request -> Node reply (To source) -> Shared in cache and sharer list update in directory
+ *
+ * Case 18:
+ *  - Directory Shared (Local) -> Write request -> Invalidation broadcast -> Node reply (To source) -> Invalidation ack -> Modified in cache, invalidation, and owned in directory
+ *
+ * Case 19:
+ *  - Directory Shared (Local) -> Write request (write back) -> Update sharer list
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 20:
+ *  - Directory Shared (Global) -> Write request -> Invalidation -> ...
+ *  -                                               Write request -> Resubmit/Retry
+ *
+ * Case 21:
+ *  - Directory Shared (Global) -> Write request -> Invalidation -> ...
+ *  -                                               Write request -> Forward request
+ *
+ * Case 22:
+ *  - Directory Shared (Local) -> Write request -> Invalidation -> ...
+ *  -                                               Write request -> Forward request
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 23:
+ *  - Directory Shared-no-data (Local) -> Read request -> Forward request -> Node reply (To directory and source) -> Shared in cache and sharer list update
+ *
+ * Case 24:
+ *  - Directory shared-no-data (Local) -> Write request -> Resubmit -> Directory shared -> invalidation -> Modified in cache and owned in directory
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 25:
+ *  - Invalidation 31 nodes (Global)
+ *
+ * Case 26:
+ *  - Invalidation 31 nodes (Local)
+ *
+ * Case 27:
+ *  - Directory Shared (Global) -> Write request -> Invalidation
+ *                                                  Read request -> Retry/Resubmit
+ *
+ * Case 28:
+ *  - Queue 2 (Invalidation queue full)
+ *  - Ownership and directory node same (Owned -> Shared-No-data -> Shared)
+ *
+ * Case 29:
+ *  - Directory shared (Global) -> Write request -> Invalidation          -> Node non-ack (Cache miss)    -> No more action
+ *  -                                        Write back (Shared) -> Directory update sharer list
+ * --------------------------------------------------------------------------------------------------------------
+ * Case 30:
+ *  - Random
+ *
+ * Case 31:
+ *  - Directory Owned (with owner) -> Read request -> Node reply (Memory write) -> Shared in both caches
+ *
+ * Case 32:
+ *  - Directory Shared (Local) -> Write request -> Invalidation
+ *                                                  Read request -> Retry/Resubmit
+ * --------------------------------------------------------------------------------------------------------------
  */
 void init_test() {
     switch (args.test) {
