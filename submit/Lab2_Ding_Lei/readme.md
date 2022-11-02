@@ -24,3 +24,6 @@ Qiyang Ding, Mingyu Lei
 
        $ ./runme_uarch.sh
 
+## To use our test for others' simulator
+
+1. Please make sure you copy our cpp files (`proc.cpp`, `test.cpp`) as well as the header files (`proc.h`, `test.h`) to others' simulator. `proc.h` is specific so it should also be copied with `proc.cpp`. Otherwise, it cannot be compiled.
