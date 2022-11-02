@@ -229,6 +229,12 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         pc.permit_tag = EXCLUSIVE;
 
                         cache->reply(pc);
+                        if (proc_cmd_buffer[1].valid) {
+                            // process possible repl wb right away
+                            proc_writeback(proc_cmd_buffer[1].proc_cmd);
+                            proc_cmd_buffer[1].valid = 0;
+                        }
+
                         proc_cmd_buffer[0].valid = 0; // clear proc_cmd
 
                     } else if (dir[lcl].state == DIR_SHARED) {
@@ -238,8 +244,13 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         copy_cache_line(pc.data, mem[lcl]);
                         pc.permit_tag = SHARED;
 
-                        proc_cmd_buffer[0].valid = 0; // clear proc_cmd
                         cache->reply(pc);
+                        if (proc_cmd_buffer[1].valid) {
+                            // process possible repl wb right away
+                            proc_writeback(proc_cmd_buffer[1].proc_cmd);
+                            proc_cmd_buffer[1].valid = 0;
+                        }
+                        proc_cmd_buffer[0].valid = 0; // clear proc_cmd
 
                     } else if (dir[lcl].state == DIR_OWNED) {
                         // If it is owned by other nodes, it needs to generate a net_cmd and forward the proc_cmd
@@ -301,8 +312,13 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         dir[lcl].state = DIR_OWNED;
                         copy_cache_line(pc.data, mem[lcl]);
 
-                        proc_cmd_buffer[0].valid = 0; // clear proc_cmd
                         cache->reply(pc);
+                        if (proc_cmd_buffer[1].valid) {
+                            // process possible repl wb right away
+                            proc_writeback(proc_cmd_buffer[1].proc_cmd);
+                            proc_cmd_buffer[1].valid = 0;
+                        }
+                        proc_cmd_buffer[0].valid = 0; // clear proc_cmd
 
                     } else if (dir[lcl].state == DIR_SHARED) {
 
@@ -346,8 +362,14 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                             // sharer list won't be updated for now
                             // reply to the cache
                             copy_cache_line(pc.data, mem[lcl]);
-                            proc_cmd_buffer[0].valid = 0; // clear proc_cmd
                             cache->reply(pc);
+                            if (proc_cmd_buffer[1].valid) {
+                                // process possible repl wb right away
+                                proc_writeback(proc_cmd_buffer[1].proc_cmd);
+                                proc_cmd_buffer[1].valid = 0;
+                            }
+
+                            proc_cmd_buffer[0].valid = 0; // clear proc_cmd
                         
                         }
 
@@ -1085,15 +1107,27 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
                 NOTE_ARGS(("Node %d, dir update to SHARED based on the reply from node %d", node, net_cmd.src));
                 if (net_cmd.src == gen_node(pc.addr)) {
                     // requestor is the dir
+                    cache->reply(pc);
+                    if (proc_cmd_buffer[1].valid) {
+                        // process possible repl wb right away
+                        proc_writeback(proc_cmd_buffer[1].proc_cmd);
+                        proc_cmd_buffer[1].valid = 0;
+                    }
                     proc_cmd_buffer[0].valid = 0; // clear proc_cmd
-                    cache->reply(pc);                    
+                    
                 }
             } else {
                 // Read request ack (Not forwarded request)
                 // Fill cache (may trigger replacement write back)
                 // End the processor command processing signal
-                proc_cmd_buffer[0].valid = 0; // clear proc_cmd
                 cache->reply(pc);
+                if (proc_cmd_buffer[1].valid) {
+                    // process possible repl wb right away
+                    proc_writeback(proc_cmd_buffer[1].proc_cmd);
+                        proc_cmd_buffer[1].valid = 0;
+                }
+                proc_cmd_buffer[0].valid = 0; // clear proc_cmd
+
 
             }
             break;
@@ -1113,14 +1147,25 @@ bool iu_t::process_net_reply(net_cmd_t net_cmd) {
 
                 if (net_cmd.src == gen_node(pc.addr)) {
                     // requestor is the dir
+                    cache->reply(pc); 
+                    if (proc_cmd_buffer[1].valid) {
+                        // process possible repl wb right away
+                        proc_writeback(proc_cmd_buffer[1].proc_cmd);
+                        proc_cmd_buffer[1].valid = 0;
+                    }
                     proc_cmd_buffer[0].valid = 0; // clear proc_cmd
-                    cache->reply(pc);                    
+                   
                 }
             } else {
                 // Write request ack (Not forwarded request)
                 //   - Fill memory
-                proc_cmd_buffer[0].valid = 0; // clear proc_cmd
                 cache->reply(pc);
+                if (proc_cmd_buffer[1].valid) {
+                    // process possible repl wb right away
+                    proc_writeback(proc_cmd_buffer[1].proc_cmd);
+                    proc_cmd_buffer[1].valid = 0;
+                }
+                proc_cmd_buffer[0].valid = 0; // clear proc_cmd
             }
             break;
         }
@@ -1184,10 +1229,19 @@ void iu_t::to_net_buffer(pri_t pri, net_cmd_t net_cmd) {
 }
 
 void iu_t::from_proc_cmd_buffer(bool id, proc_cmd_t proc_cmd) {
+    if (proc_cmd_buffer[1].valid && (id == 1)) {
+        ERROR("net_buffer: pending request got overwritten");
+        return;
+    }
+
     NOTE_ARGS(("Node %d, buffered a proc cmd with bus op %d to buffer %d", node, proc_cmd.busop, id));
 
     proc_cmd_buffer[id].proc_cmd = proc_cmd;
-    proc_cmd_buffer[id].valid = 1;
+    if (id) {
+        proc_cmd_buffer[id].valid = !forward_cmd_p;
+    } else {
+        proc_cmd_buffer[id].valid = 1;
+    }
 }
 
 bool iu_t::proc_cmd_buffer_p() {
@@ -1195,7 +1249,6 @@ bool iu_t::proc_cmd_buffer_p() {
         if (!proc_cmd_processed_p)      { NOTE_ARGS(("Node %d, buffer 0 got processed", node));}
         return !proc_cmd_processed_p;
     } else if (proc_cmd_buffer[1].valid) {
-        proc_cmd_buffer[1].valid = false;
         NOTE_ARGS(("Node %d, buffer 1 got processed", node));
         return true;
     } else {
@@ -1204,10 +1257,61 @@ bool iu_t::proc_cmd_buffer_p() {
 }
 
 proc_cmd_t iu_t::get_proc_cmd() {
-    if (proc_cmd_buffer[0].valid && !proc_cmd_processed_p) {
+    if (proc_cmd_buffer[1].valid) {
+        proc_cmd_buffer[1].valid = false;
+        return proc_cmd_buffer[1].proc_cmd;
+    } else if (proc_cmd_buffer[0].valid && !proc_cmd_processed_p) {
         proc_cmd_processed_p = true;    // do not process the same proc cmd repeatedly
         return proc_cmd_buffer[0].proc_cmd;
     } else {
-        return proc_cmd_buffer[1].proc_cmd;
+        ERROR_ARGS(("Node %d: should have valid cmd", node));
+    }
+}
+
+void iu_t::proc_writeback(proc_cmd_t pc) {
+    // replacement / evict
+    int lcl = gen_local_cache_line(pc.addr);
+    int dest = gen_node(pc.addr);
+
+    if (dest == node) {
+        ++local_accesses;
+        if (dir[lcl].state == DIR_SHARED) {
+            // shared: update sharer list
+            uint temp = ~(1 << node);
+            dir[lcl].shared_nodes &= temp;
+            if (dir[lcl].shared_nodes == 0) {
+                dir[lcl].state = DIR_INVALID;
+            }
+        } else if (dir[lcl].state == DIR_OWNED) {
+            // owned: copy the data into memory and change directory state to be Invalid
+            if (((dir[lcl].shared_nodes >> node) & 0x1) == 0) {
+                ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
+            }
+            copy_cache_line(mem[lcl], pc.data);
+            dir[lcl].state = DIR_INVALID;
+            dir[lcl].shared_nodes = 0;
+
+        } else {
+            ERROR_ARGS(("Invalid write-back request from node %d, dir state %d", node));
+        }
+
+    } else {
+        ++global_accesses;
+
+        net_cmd_t net_cmd;
+        net_cmd.src = node;
+        net_cmd.dest = dest;
+        net_cmd.proc_cmd = pc;
+        net_cmd.valid_p = 1;
+
+        if (pc.busop == WRITE) {
+            bool enqueue_status = net->to_net(node, WRBACK, net_cmd);
+            if (!enqueue_status) {
+                // WRBACK queue is full
+                to_net_buffer(WRBACK, net_cmd);
+            }
+        } else {
+            ERROR_ARGS(("Invalid write-back request from node %d, dir state %d", node));
+        }
     }
 }

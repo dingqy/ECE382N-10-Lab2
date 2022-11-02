@@ -80,6 +80,8 @@ public:
 
     bool proc_cmd_buffer_p(); 
     proc_cmd_t get_proc_cmd();
+
+    void proc_writeback(proc_cmd_t pc);
 };
 
 #endif
