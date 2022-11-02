@@ -27,7 +27,7 @@ class iu_t {
 
     bool proc_cmd_p;
     bool proc_cmd_processed_p;
-    iu_proc_cmd_buffer_t proc_cmd_buffer[1];
+    iu_proc_cmd_buffer_t proc_cmd_buffer[SIZE_PROC_TO_IU_BUFFER];
 
     // processor side
     bool process_proc_request(proc_cmd_t proc_cmd);
@@ -46,10 +46,9 @@ class iu_t {
 
     // for foward network requests
     bool forward_cmd_p;
-    forward_cmd_t forward_net_cmd;
 
     // buffers to queues
-    iu_net_buffer_t net_buffer[1]; // possible to enqueue 2 net_cmd per cycle
+    iu_net_buffer_t net_buffer[SIZE_IU_TO_NET_BUFFER]; // possible to enqueue 2 net_cmd per cycle
     
 
 public:
