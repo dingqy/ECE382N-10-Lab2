@@ -724,6 +724,18 @@ void init_test() {
             test_args[1].test_goldens.emplace_back(113, test_result_t{INVALID, DIR_SHARED, 0x00000101, 0x200, 0xA, 0x0});
             break;
         case 33:
+            test_args[0].test_cases.emplace_back(0, test_case_t{false, 0, 0});
+            test_args[14].test_cases.emplace_back(0, test_case_t{true, 35, 0});
+            test_args[15].test_cases.emplace_back(0, test_case_t{true, 38, 0});
+            test_args[16].test_cases.emplace_back(0, test_case_t{false, 41, 0});
+
+            test_args[16].test_cases.emplace_back(100, test_case_t{true, 12584, 97});
+            test_args[16].test_cases.emplace_back(102, test_case_t{true, 20263, 185});
+            test_args[16].test_cases.emplace_back(104, test_case_t{false, 11807, 251});
+            test_args[16].test_cases.emplace_back(106, test_case_t{true, 3493, 273});
+            test_args[16].test_cases.emplace_back(108, test_case_t{true, 31277, 296});
+            break;
+        case 34:
             test_args[1].test_cases.emplace_back(0, test_case_t{true, 2, 0});
             test_args[2].test_cases.emplace_back(0, test_case_t{false, 5, 0});
             test_args[3].test_cases.emplace_back(0, test_case_t{true, 7, 0});
@@ -1300,6 +1312,7 @@ void finish_test() {
             case 31:
             case 32:
             case 33:
+            case 34:
                 std::cout << "Processor: " << i << " Checking..." << std::endl;
                 for (int j = 0; j < test_args[i].test_goldens.size(); j++) {
                     std::cout << "Processor: " << i << " Checking record " << j << std::endl;

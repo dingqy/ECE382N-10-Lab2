@@ -24,8 +24,8 @@ fi
 
 if [ -z $TEST_END ] 
 then
-    echo "The TEST_END var is not set, setting to 33"
-    TEST_END=33
+    echo "The TEST_END var is not set, setting to 34"
+    TEST_END=34
 fi
 
 CUR_TEST=$TEST_START
