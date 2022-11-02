@@ -67,7 +67,6 @@ public:
     bool from_net(net_cmd_t nc);
 
     // debug directory
-    // TODO: Function for tests
     dir_t get_dir_entry(int index);
 
     void set_mem(int addr, const data_t data);

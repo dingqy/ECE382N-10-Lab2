@@ -10,7 +10,7 @@ Qiyang Ding, Mingyu Lei
 2. Scripts are located in `sim/scipts`
 
 ## To run the test
-1. Please make sure you substitute your cpp files (`proc.cpp`, `test.cpp`, `proc_uarch.cpp`, `test_uarch.cpp`) as well as the header files (`proc.h`, `test.h`) with ours.
+1. Please make sure you substitute your cpp files (`proc.cpp`, `test.cpp`, `proc_uarch.cpp`, `test_uarch.cpp`) as well as the header files (`proc.h`, `test.h`, `test_uarch.h`) with ours.
    
 2. cd to sim/scipts
 

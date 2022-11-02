@@ -423,7 +423,7 @@ void cache_t::reply(proc_cmd_t proc_cmd) {
 
     NOTE_ARGS(("%d: replacing addr_tag %d into set %d, assoc %d", node, car.address_tag, car.set, car.way));
 
-    // TODO: Write back replacement cache line
+    // Write back replacement cache line
     if (cache_access(proc_cmd.addr, INVALID, &car)) {
         // already in the cache
         replaced_wb = 0;
@@ -474,7 +474,7 @@ response_t cache_t::snoop(net_cmd_t net_cmd) {
     response_t resp;
     cache_access_response_t car;
 
-    resp.retry_p = false; //TODO: Not sure about retry_p
+    resp.retry_p = false;
 
     if (cache_access(new_pc.addr, SHARED, &car)) {
         // hit
@@ -524,7 +524,7 @@ response_t cache_t::snoop(net_cmd_t net_cmd) {
             }
             iu->from_proc(new_pc);
         } else {
-            ERROR_ARGS(("Illegal bus op type seen at node %d", node));
+            NOTE_ARGS(("Illegal bus op type seen at node %d", node));
         }
     } else {
         // miss

@@ -61,7 +61,7 @@ void iu_t::bind(cache_t *c, network_t *n) {
  * IU can only execute one request per cycle
  * The priority is REPLY > REQUEST > PROC.
  *
- * TODO: New priority: REPLY > WRITEBACK > FORWARD > REQUEST > PROC; SEND_REPLY > SEND_FORWARD
+ * New priority: REPLY > WRITEBACK > FORWARD > REQUEST > PROC; SEND_REPLY > SEND_FORWARD
  */
 void iu_t::advance_one_cycle() {
 
@@ -323,8 +323,8 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
                         // If it is shared with other nodes, send invalidates to all sharers
                         if (dir[lcl].shared_nodes == 0) {
-                            ERROR("sharer list should not be zero");
-                        }
+                            NOTE("sharer list should not be zero");
+                       }
 
                         if (to_net_inv_q.space() < count_bits(dir[lcl].shared_nodes)) {
                             // let the processor retry
@@ -403,8 +403,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                         ERROR_ARGS(("invalid directory state seen at node %d\n", node));
                     }
                 } else {
-                    ERROR_ARGS(
-                            ("Invalid bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
+                    NOTE_ARGS(("Unrecoganized bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
                 }
                 break;
 
@@ -422,7 +421,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                 } else if (dir[lcl].state == DIR_OWNED) {
                     // owned: copy the data into memory and change directory state to be Invalid
                     if (((dir[lcl].shared_nodes >> node) & 0x1) == 0) {
-                        ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
+                        NOTE_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
                     }
                     copy_cache_line(mem[lcl], pc.data);
                     dir[lcl].state = DIR_INVALID;
@@ -432,7 +431,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     dir[lcl].shared_nodes &= temp;
 
                 } else {
-                    ERROR_ARGS(("Invalid write-back request from node %d\n", node));
+                    NOTE_ARGS(("Write-back request from node %d\n", node));
                 }
                 proc_cmd_buffer[1].valid = 0;
                 break;
@@ -501,9 +500,9 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *          - If the permitted tag is Modified:
  *              + Change the block to be Modified state
  *              + Send invalidation requests until all the sharers acknowledge (Push requests into the queue)
- *                  TODO: If request queue is not enough, What should do to avoid deadlock?
- *                        One possible solution is add one internal request queue and buffer the request temporarily
- *                        If the buffer is full, and invalidation queue is still not enough, non-ack response is sent
+ *                  If request queue is not enough, What should do to avoid deadlock?
+ *                      One possible solution is add one internal request queue and buffer the request temporarily
+ *                      If the buffer is full, and invalidation queue is still not enough, non-ack response is sent
  *              + Send acknowledge back to source node
  *          o If the permitted tag is Shared:
  *              + Update sharer list (Change 1 to 0)
@@ -529,7 +528,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
  *      x No directory access
  *      x Modify cache state and return ack response (No matter whether it hit or not)
  *
- *  TODO: New queue on network (Forward Queue) / New internal queue (Send-Forward Queue and Send-reply Queue)
+ * New queue on network (Forward Queue) / New internal queue (Send-Forward Queue and Send-reply Queue)
  *
  * @param net_cmd Network command
  * @return Success or not
@@ -601,7 +600,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                             forward_cmd_p = false;
 
                             if (!r.hit_p) {
-                                ERROR_ARGS(("The owner %d lost the cache line for addr %d\n", node, pc.addr));
+                                NOTE_ARGS(("The owner %d lost the cache line for addr %d\n", node, pc.addr));
                             }
 
                             dir[lcl].state = DIR_SHARED;
@@ -770,7 +769,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                 forward_cmd_p = false;
 
                                 if (!r.hit_p) {
-                                    ERROR_ARGS(("The owner %d lost the cache line for addr %d\n", node, pc.addr));
+                                    NOTE_ARGS(("The owner %d lost the cache line for addr %d\n", node, pc.addr));
                                 }
 
                                 dir[lcl].state = DIR_OWNED;
@@ -823,8 +822,8 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                         }
                     }
                 } else {
-                    ERROR_ARGS(
-                            ("Invalid bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
+                    NOTE_ARGS(
+                        ("Unrecognized bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
                 }
                 break;
 
@@ -912,7 +911,6 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         // reply to the dir with data
                         // if dir is not the requestor
-                        // TODO: ???
                         if (gen_node(pc.addr) != src) {
                             net_cmd.dest = gen_node(pc.addr);
                             to_net_buffer(REPLY, net_cmd);
@@ -961,7 +959,6 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         // reply to the dir with data
                         // if dir is not the requestor
-                        // TODO: ????
                         net_cmd.dest = gen_node(pc.addr);
                         if (gen_node(pc.addr) != src) {
                             net_cmd.dest = gen_node(pc.addr);
@@ -969,8 +966,8 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                         }
                     }
                 } else {
-                    ERROR_ARGS(
-                            ("Invalid bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
+                    NOTE_ARGS(
+                            ("Unrecognized bus op %d with permit tag %d seen at node %d\n", pc.busop, pc.permit_tag, node));
                 }
                 break;
 
@@ -1010,7 +1007,7 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
             } else if (dir[lcl].state == DIR_OWNED) {
                 // owned: copy the data into memory and change directory state to be Invalid
                 if (((dir[lcl].shared_nodes >> src) & 0x1) == 0) {
-                    ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
+                    NOTE_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
                 } else {
                     // shared: update sharer list
                     uint temp = ~(1 << src);
@@ -1027,7 +1024,7 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
                 }
             } else if (dir[lcl].state == DIR_SHARED_NO_DATA) {
                 if (((dir[lcl].shared_nodes >> src) & 0x1) == 0) {
-                    ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
+                    NOTE_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
                 } else {
                     // shared: update sharer list
                     uint temp = ~(1 << src);
@@ -1045,7 +1042,7 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
             } else if (dir[lcl].state == DIR_INVALID) {
                 // do nothing
             } else {
-                ERROR_ARGS(("invalid directory state seen at node %d\n", node));
+                ERROR_ARGS(("Invalid directory state seen at node %d\n", node));
             }
         } else {
             ERROR("WRITEBACK queue should satisfy gen_node(pc.addr) == node");
@@ -1289,7 +1286,7 @@ void iu_t::proc_writeback(proc_cmd_t pc) {
         } else if (dir[lcl].state == DIR_OWNED) {
             // owned: copy the data into memory and change directory state to be Invalid
             if (((dir[lcl].shared_nodes >> node) & 0x1) == 0) {
-                ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
+                NOTE_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
             }
             copy_cache_line(mem[lcl], pc.data);
             dir[lcl].state = DIR_INVALID;
@@ -1298,7 +1295,7 @@ void iu_t::proc_writeback(proc_cmd_t pc) {
             dir[lcl].shared_nodes &= temp;
 
         } else {
-            ERROR_ARGS(("Invalid write-back request from node %d, dir state %d", node));
+            NOTE_ARGS(("Unrecoganized write-back request from node %d, dir state %d", node));
         }
 
     } else {
@@ -1317,7 +1314,7 @@ void iu_t::proc_writeback(proc_cmd_t pc) {
                 to_net_buffer(WRBACK, net_cmd);
             }
         } else {
-            ERROR_ARGS(("Invalid write-back request from node %d, dir state %d", node));
+            NOTE_ARGS(("Unrecoganized write-back request from node %d, dir state %d", node));
         }
     }
 }
