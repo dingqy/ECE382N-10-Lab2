@@ -64,7 +64,6 @@ void iu_t::bind(cache_t *c, network_t *n) {
  * TODO: New priority: REPLY > WRITEBACK > FORWARD > REQUEST > PROC; SEND_REPLY > SEND_FORWARD
  */
 void iu_t::advance_one_cycle() {
-    forward_cmd_p = false;
 
     bool enqueue_status = false;
     if (net_buffer[0].valid || net_buffer[1].valid) {
@@ -599,6 +598,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                             response_t r = cache->snoop(net_cmd);
                             // can't return the data back for now
                             // have to access cache for data
+                            forward_cmd_p = false;
 
                             if (!r.hit_p) {
                                 ERROR_ARGS(("The owner %d lost the cache line for addr %d\n", node, pc.addr));
@@ -767,6 +767,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                 response_t r = cache->snoop(net_cmd);
                                 // can't return the data back for now
                                 // have to access cache for data
+                                forward_cmd_p = false;
 
                                 if (!r.hit_p) {
                                     ERROR_ARGS(("The owner %d lost the cache line for addr %d\n", node, pc.addr));
@@ -872,6 +873,7 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                     response_t r = cache->snoop(net_cmd);
                     // can't return the data back for now
                     // have to access cache for data
+                    forward_cmd_p = false;
 
                     if (!r.hit_p) {
                         // if cache miss, return non-ack response to the source
@@ -922,7 +924,8 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                     response_t r = cache->snoop(net_cmd);
                     // can't return the data back for now
                     // have to access cache for data
-
+                    forward_cmd_p = false;
+                    
                     if (!r.hit_p) {
                         // if cache miss, return non-ack response to the source
                         NOTE_ARGS(("The owner %d has lost the cache line for addr %d\n", node, pc.addr));
