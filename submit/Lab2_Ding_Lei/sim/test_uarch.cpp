@@ -10,7 +10,7 @@
 #include "generic_error.h"
 #include "helpers.h"
 #include "cache.h"
-#include "test.h"
+#include "test_uarch.h"
 
 extern args_t args;
 extern int addr_range;
