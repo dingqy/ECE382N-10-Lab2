@@ -405,7 +405,9 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                     }
                     copy_cache_line(mem[lcl], pc.data);
                     dir[lcl].state = DIR_INVALID;
-                    dir[lcl].shared_nodes = 0;
+                    // shared: update sharer list
+                    uint temp = ~(1 << node);
+                    dir[lcl].shared_nodes &= temp;
 
                 } else {
                     ERROR_ARGS(("Invalid write-back request from node %d\n", node));
@@ -985,36 +987,34 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
                 if ((dir[lcl].shared_nodes >> src) & 0x1 == 0) {
                     ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
                 } else {
-                    if (dir[lcl].owner != src) {
-                        // shared: update sharer list
-                        uint temp = ~(1 << src);
-                        dir[lcl].shared_nodes &= temp;
+                    // shared: update sharer list
+                    uint temp = ~(1 << src);
+                    dir[lcl].shared_nodes &= temp;
 
+                    if (dir[lcl].owner != src) {
                         if (dir[lcl].shared_nodes == 0) {
                             dir[lcl].state = DIR_INVALID;
                         }
                     } else {
                         copy_cache_line(mem[lcl], pc.data);
-                        dir[lcl].state = DIR_INVALID;
-                        dir[lcl].shared_nodes = 0;
+                        dir[lcl].state = DIR_INVALID;;
                     }
                 } 
             } else if (dir[lcl].state == DIR_SHARED_NO_DATA) {
                 if ((dir[lcl].shared_nodes >> src) & 0x1 == 0) {
                     ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
                 } else {
-                    if (dir[lcl].owner != src) {
-                        // shared: update sharer list
-                        uint temp = ~(1 << src);
-                        dir[lcl].shared_nodes &= temp;
+                    // shared: update sharer list
+                    uint temp = ~(1 << src);
+                    dir[lcl].shared_nodes &= temp;
 
+                    if (dir[lcl].owner != src) {
                         if (dir[lcl].shared_nodes == 0) {
                             dir[lcl].state = DIR_INVALID;
                         }
                     } else {
                         copy_cache_line(mem[lcl], pc.data);
                         dir[lcl].state = DIR_INVALID;
-                        dir[lcl].shared_nodes = 0;
                     }                    
                 }             
             } else if (dir[lcl].state == DIR_INVALID) {
