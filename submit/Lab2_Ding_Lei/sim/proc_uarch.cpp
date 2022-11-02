@@ -18,7 +18,7 @@
 #include "generic_error.h"
 #include "cache.h"
 #include "proc.h"
-#include "test.h"
+#include "test_uarch.h"
 #include "helpers.h"
 
 /**
