@@ -335,33 +335,23 @@ void init_test() {
 
             test_args[1].test_cases.emplace_back(35, test_case_t{TEST_WRITE, 0x00000101, 0x200});
 
-            test_args[2].test_cases.emplace_back(52, test_case_t{TEST_READ, 0x00000101, 0x0});
-            test_args[2].test_goldens.emplace_back(52,
-                                                   test_result_t{SHARED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
-            test_args[1].test_cases.emplace_back(52, test_case_t{TEST_READ, 0x00000101, 0x0});
-            test_args[1].test_goldens.emplace_back(54,
+            test_args[0].test_cases.emplace_back(70, test_case_t{TEST_READ, 0x00000101, 0x0});
+            test_args[0].test_goldens.emplace_back(70,
                                                    test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
-            test_args[0].test_cases.emplace_back(52, test_case_t{TEST_READ, 0x00000101, 0x0});
-            test_args[0].test_goldens.emplace_back(64,
+                                                   
+            test_args[0].test_cases.emplace_back(70, test_case_t{TEST_READ, 0x00000101, 0x0});
+            test_args[0].test_goldens.emplace_back(70,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
             break;
 
-        case 24:
-            test_args[0].test_cases.emplace_back(0, test_case_t{TEST_WRITE, 0x00000101, 0x100});
-            
-            for (int i = 1; i < 32; i++) {
-                test_args[i].test_cases.emplace_back(50, test_case_t{TEST_READ, 0x00000101, 0x0});
-                test_args[i].test_goldens.emplace_back(50,
-                                                   test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
-            }
-
+        case 24:        
             for (int i = 0; i < 32; i++) {
-                test_args[i].test_cases.emplace_back(1000, test_case_t{TEST_WRITE, 0x00000101, 0x200 + (0x1 << i)});
+                test_args[i].test_cases.emplace_back(i, test_case_t{TEST_WRITE, 0x00000101, 0x200});
             }
 
-            test_args[10].test_cases.emplace_back(2000, test_case_t{TEST_READ, 0x00000101, 0x0});
-            test_args[10].test_goldens.emplace_back(2000,
-                                                   test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200 + (0x1 << 31), 0x0, 0x0});
+            test_args[0].test_cases.emplace_back(1000, test_case_t{TEST_READ, 0x00000101, 0x0});
+            test_args[0].test_goldens.emplace_back(1000,
+                                                   test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200, 0x0, 0x0});
             break;
 
         case 25:
