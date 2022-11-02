@@ -12,8 +12,8 @@ fi
 
 if [ -z $NUM_CYCLE ] 
 then
-    echo "The NUM_CYCLE var is not set, setting to 5000"
-    NUM_CYCLE=5000
+    echo "The NUM_CYCLE var is not set, setting to 50000"
+    NUM_CYCLE=50000
 fi
 
 if [ -z $TEST_START ] 
