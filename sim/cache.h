@@ -52,6 +52,8 @@ class cache_t {
 
     int address_tag_shift;
 
+    bool success;
+
     // stats
     int full_hits;
     int partial_hits;

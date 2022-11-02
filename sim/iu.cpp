@@ -844,7 +844,7 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
             net_cmd.src = node;
             net_cmd.dest = gen_node(pc.addr);
             net_cmd.proc_cmd = pc;
-            net_cmd.valid_p = 1;
+            net_cmd.valid_p = r.hit_p;
 
             bool enqueue_status = net->to_net(node, REPLY, net_cmd);
             if (!enqueue_status) {
