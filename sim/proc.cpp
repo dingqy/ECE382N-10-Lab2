@@ -221,6 +221,7 @@ void proc_t::advance_one_cycle() {
         case 32:
         case 33:
         case 34:
+        case 35:
             if (case_index < test_set.test_cases.size()) {
                 if (cur_cycle >= test_set.test_cases[case_index].first) {
                     if (test_set.test_cases[case_index].second.write) {
