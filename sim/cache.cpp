@@ -476,7 +476,7 @@ response_t cache_t::snoop(net_cmd_t net_cmd) {
 
     resp.retry_p = false; //TODO: Not sure about retry_p
 
-    if (cache_access(new_pc.addr, INVALID, &car)) {
+    if (cache_access(new_pc.addr, SHARED, &car)) {
         // hit
         resp.hit_p = true;
         new_pc.permit_tag = tags[car.set][car.way].permit_tag;

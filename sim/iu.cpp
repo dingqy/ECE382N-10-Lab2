@@ -1004,7 +1004,7 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
 
             } else if (dir[lcl].state == DIR_OWNED) {
                 // owned: copy the data into memory and change directory state to be Invalid
-                if ((dir[lcl].shared_nodes >> src) & 0x1 == 0) {
+                if (((dir[lcl].shared_nodes >> src) & 0x1) == 0) {
                     ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
                 } else {
                     if (dir[lcl].owner != src) {
@@ -1022,7 +1022,7 @@ bool iu_t::process_net_writeback(net_cmd_t net_cmd) {
                     }
                 } 
             } else if (dir[lcl].state == DIR_SHARED_NO_DATA) {
-                if ((dir[lcl].shared_nodes >> src) & 0x1 == 0) {
+                if (((dir[lcl].shared_nodes >> src) & 0x1) == 0) {
                     ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
                 } else {
                     if (dir[lcl].owner != src) {
