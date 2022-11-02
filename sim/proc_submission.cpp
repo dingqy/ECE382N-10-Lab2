@@ -189,6 +189,40 @@ void proc_t::advance_one_cycle() {
             else response = cache->store(addr, 0, cur_cycle, response.retry_p);
             break;
         case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+        case 16:
+        case 17:
+        case 18:
+        case 19:
+        case 20:
+        case 21:
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+        case 26:
+        case 27:
+        case 28:
+        case 29:
+        case 30:
+        case 31:
+        case 32:
+        case 33:
+        case 34:
+        case 35:
             if (case_index < test_set.test_cases.size()) {
                 if (cur_cycle >= test_set.test_cases[case_index].first) {
                     if (test_set.test_cases[case_index].second.write) {
@@ -199,7 +233,7 @@ void proc_t::advance_one_cycle() {
                         response = cache->load(test_set.test_cases[case_index].second.address, 0, &data,
                                                response.retry_p);
                         if (!response.retry_p) {
-                            test_set.test_results.emplace_back(cur_cycle, test_result_t{INVALID, DIR_INVALID,
+                            test_args[proc].test_results.emplace_back(cur_cycle, test_result_t{INVALID, DIR_INVALID,
                                                                                         test_set.test_cases[case_index].second.address,
                                                                                         data, 0x0, 0x0});
                         }
@@ -210,7 +244,7 @@ void proc_t::advance_one_cycle() {
                 }
             }
             break;
-        case 2:
+        case 36:
             if (!response.retry_p) {
                 std::uniform_int_distribution<int> distribution{0, test_args[proc].addr_range};
                 addr = distribution(test_args[proc].random_generator);

@@ -15,8 +15,8 @@ add_executable(lab2 ./sim/cache.cpp
                     ./sim/my_fifo.h
                     ./sim/network.cpp
                     ./sim/network.h
-                    ./sim/proc.cpp
+                    ./sim/proc_submission.cpp
                     ./sim/proc.h
-                    ./sim/test.cpp
+                    ./sim/test_submission.cpp
                     ./sim/test.h
                     ./sim/types.h)
