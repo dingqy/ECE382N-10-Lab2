@@ -213,16 +213,6 @@ void proc_t::advance_one_cycle() {
         case 23:
         case 24:
         case 25:
-        case 26:
-        case 27:
-        case 28:
-        case 29:
-        case 30:
-        case 31:
-        case 32:
-        case 33:
-        case 34:
-        case 35:
             if (case_index < test_set.test_cases.size()) {
                 if (cur_cycle >= test_set.test_cases[case_index].first) {
                     if (test_set.test_cases[case_index].second.write) {
@@ -244,7 +234,7 @@ void proc_t::advance_one_cycle() {
                 }
             }
             break;
-        case 36:
+        case 26:
             if (!response.retry_p) {
                 std::uniform_int_distribution<int> distribution{0, test_args[proc].addr_range};
                 addr = distribution(test_args[proc].random_generator);

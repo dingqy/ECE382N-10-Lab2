@@ -360,7 +360,7 @@ void init_test() {
             }
 
             test_args[10].test_cases.emplace_back(2000, test_case_t{TEST_READ, 0x00000101, 0x0});
-            test_args[10].test_goldens.emplace_back(200,
+            test_args[10].test_goldens.emplace_back(2000,
                                                    test_result_t{MODIFIED, DIR_INVALID, 0x00000101, 0x200 + (0x1 << 31), 0x0, 0x0});
             break;
 
@@ -435,15 +435,6 @@ void finish_test() {
             case 24:
             case 25:
             case 26:
-            case 27:
-            case 28:
-            case 29:
-            case 30:
-            case 31:
-            case 32:
-            case 33:
-            case 34:
-            case 35:
                 std::cout << "Processor: " << i << " Checking..." << std::endl;
                 if (test_args[i].test_goldens.size() != test_args[i].test_results.size()) {
                     ERROR("Test numbers are different.")
