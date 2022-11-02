@@ -213,6 +213,13 @@ void proc_t::advance_one_cycle() {
         case 23:
         case 24:
         case 25:
+        case 26:
+        case 27:
+        case 28:
+        case 29:
+        case 31:
+        case 32:
+        case 33:
             if (case_index < test_set.test_cases.size()) {
                 if (cur_cycle >= test_set.test_cases[case_index].first) {
                     if (test_set.test_cases[case_index].second.write) {
@@ -222,11 +229,6 @@ void proc_t::advance_one_cycle() {
                     } else {
                         response = cache->load(test_set.test_cases[case_index].second.address, 0, &data,
                                                response.retry_p);
-                        if (!response.retry_p) {
-                            test_args[proc].test_results.emplace_back(cur_cycle, test_result_t{INVALID, DIR_INVALID,
-                                                                                        test_set.test_cases[case_index].second.address,
-                                                                                        data, 0x0, 0x0});
-                        }
                     }
                     if (!response.retry_p) {
                         case_index += 1;
@@ -234,7 +236,7 @@ void proc_t::advance_one_cycle() {
                 }
             }
             break;
-        case 26:
+        case 30:
             if (!response.retry_p) {
                 std::uniform_int_distribution<int> distribution{0, test_args[proc].addr_range};
                 addr = distribution(test_args[proc].random_generator);
@@ -245,5 +247,33 @@ void proc_t::advance_one_cycle() {
             else response = cache->store(addr, 0, cur_cycle, response.retry_p);
             break;
         default: ERROR("don't know this test case");
+    }
+
+//    if (proc == 1) {
+//        std::cout << "Cycle: " << cur_cycle << ", Permit tag: " << cache->get_permit_tag(6, 0) << std::endl;
+//    }
+
+    while (record_index < test_set.test_records.size()) {
+        int address = test_set.test_records[record_index].second.address;
+        if (cur_cycle == test_set.test_records[record_index].first) {
+            if (test_set.test_records[record_index].second.mem_cache) {
+                cache_access_response_t cache_rep;
+                cache->cache_access(address, INVALID, &cache_rep);
+                test_args[proc].test_results.emplace_back(cur_cycle,
+                                                          test_result_t{cache_rep.permit_tag, DIR_INVALID, address,
+                                                                        cache->read_data(address, cache_rep), 0x0,
+                                                                        0x0});
+            } else {
+                int lcl = gen_local_cache_line(address);
+                dir_t temp = cache->get_dir_entry(lcl);
+                test_args[proc].test_results.emplace_back(cur_cycle,
+                                                          test_result_t{INVALID, temp.state, address,
+                                                                        cache->get_mem(address), temp.shared_nodes,
+                                                                        temp.owner});
+            }
+            record_index += 1;
+        } else {
+            break;
+        }
     }
 }

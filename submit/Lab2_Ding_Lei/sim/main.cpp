@@ -10,8 +10,8 @@
 
 // STUDENTS: YOU ARE NOT ALLOWED TO MODIFY THIS FILE.  
 
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "helpers.h"
 #include "cache.h"
@@ -21,9 +21,9 @@
 #include "test.h"
 
 // pointers to all components of the simulator
-proc_t    **procs;
-cache_t   **caches;
-iu_t      **ius;
+proc_t **procs;
+cache_t **caches;
+iu_t **ius;
 network_t *network;
 
 int cur_cycle = 0;
@@ -34,67 +34,82 @@ uint gen_local_addr_shift;
 args_t args;
 
 void advance_time() {
-  static int p = 0;
+    static int p = 0;
 
-  for (int i = 0; i < args.num_procs; ++i) {
-    p = (p + 1) % args.num_procs;
+    for (int i = 0; i < args.num_procs; ++i) {
+        p = (p + 1) % args.num_procs;
 
-    network->advance_one_cycle();
-    ius[p]->advance_one_cycle();
-    procs[p]->advance_one_cycle();
+        network->advance_one_cycle();
+        ius[p]->advance_one_cycle();
+        procs[p]->advance_one_cycle();
 
-  }
-  ++cur_cycle;
+    }
+    ++cur_cycle;
 }
 
+/**
+ * Parser for command line args
+ *
+ * Arguments:
+ *  1. Number of processors
+ *  2. Number of simulation clock cycles
+ *  3. Test set index
+ *  4. Debug print
+ *
+ * @param argc Number of arguments
+ * @param argv Arguments
+ */
 void parse_args(int argc, char *argv[]) {
-  if (argc != 5) {
-    ERROR("usage: <number of processors> <num cycles> <test> <verbose>");
-  }
-  
-  args.num_procs = atoi(argv[1]);
-  args.num_cycles = atoi(argv[2]);
-  args.test = atoi(argv[3]);
-  args.verbose = atoi(argv[4]);
+    if (argc != 5) {
+        ERROR("usage: <number of processors> <num cycles> <test> <verbose>");
+    }
 
-  gen_node_mask = (1 << (lg(args.num_procs))) - 1;
-  gen_local_addr_shift = lg(args.num_procs) + LG_INTERLEAVE_SIZE;
+    args.num_procs = atoi(argv[1]);
+    args.num_cycles = atoi(argv[2]);
+    args.test = atoi(argv[3]);
+    args.verbose = atoi(argv[4]);
+
+    gen_node_mask = (1 << (lg(args.num_procs))) - 1;
+    gen_local_addr_shift = lg(args.num_procs) + LG_INTERLEAVE_SIZE;
 }
 
 void init_system() {
-  network = new network_t(args.num_procs);
-  procs = new proc_t *[args.num_procs];
-  caches = new cache_t *[args.num_procs];
-  ius = new iu_t*[args.num_procs];
+    network = new network_t(args.num_procs);
+    procs = new proc_t *[args.num_procs];
+    caches = new cache_t *[args.num_procs];
+    ius = new iu_t *[args.num_procs];
 
-  for (int p = 0; p < args.num_procs; ++p) {
-    procs[p] = new proc_t(p);
-    caches[p] = new cache_t(p, 2, 3, LG_CACHE_LINE_SIZE);
-    ius[p] = new iu_t(p);;
-    
-    procs[p]->bind(caches[p]);
-    caches[p]->bind(ius[p]);
-    ius[p]->bind(caches[p], network);
-  }
+    for (int p = 0; p < args.num_procs; ++p) {
+        procs[p] = new proc_t(p);
+        // Set - 3 bits
+        // Associativity - 4
+        // OFFSET - 4 bits
+        caches[p] = new cache_t(p, 2, 3, LG_CACHE_LINE_SIZE);
+        ius[p] = new iu_t(p);;
 
-  init_test();
+        procs[p]->bind(caches[p]);
+        caches[p]->bind(ius[p]);
+        ius[p]->bind(caches[p], network);
+    }
+
+    init_test();
 }
 
-main(int argc, char *argv[]) {
-  int cycle;
+int main(int argc, char *argv[]) {
+    int cycle;
 
-  parse_args(argc, argv);
-  init_system();
-  
-  for (cycle = 0; cycle < args.num_cycles; ++cycle) {
-    advance_time();
-  }
+    parse_args(argc, argv);
+    init_system();
 
-  for (int i = 0; i < args.num_procs; ++i) {
-    caches[i]->print_stats();
-    ius[i]->print_stats();
-  }
+    for (cycle = 0; cycle < args.num_cycles; ++cycle) {
+        advance_time();
+    }
 
-  finish_test();
-  
+    for (int i = 0; i < args.num_procs; ++i) {
+        caches[i]->print_stats();
+        ius[i]->print_stats();
+    }
+
+    finish_test();
+
 }

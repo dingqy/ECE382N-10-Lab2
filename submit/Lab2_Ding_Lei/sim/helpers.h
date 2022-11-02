@@ -11,7 +11,9 @@
 const int LG_INTERLEAVE_SIZE = 8;
 
 int gen_node(address_t addr);
+
 int gen_local_addr(address_t addr);
+
 int gen_local_cache_line(address_t addr);
 
 bool within_tolerance(double, double, double);
@@ -25,3 +27,8 @@ void terminate_on_error();
 int lg(int x);
 
 char *PRI2STRING(pri_t pri);
+
+bool check_onehot(uint num);
+
+bool count_bits(uint num);
+
