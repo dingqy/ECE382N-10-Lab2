@@ -40,8 +40,8 @@ iu_t::iu_t(int __node) {
         dir[i].shared_nodes = 0;
     }
 
-    proc_cmd_buffer[0].valid = 0;
-    proc_cmd_buffer[1].valid = 0;
+    proc_cmd_buffer[0].valid = false;
+    proc_cmd_buffer[1].valid = false;
 }
 
 /**
@@ -151,17 +151,14 @@ void iu_t::advance_one_cycle() {
 // }
 
 bool iu_t::from_proc(proc_cmd_t pc) {
-    if (!forward_cmd_p) {
-        if (pc.busop == WRITE && proc_cmd_buffer[1].valid == 0) {
-            NOTE("ADDED TO BUFFER 1")
-            from_proc_cmd_buffer(1, pc);
-        } else if (proc_cmd_buffer[0].valid == 0) {
-            NOTE("ADDED TO BUFFER 0")
-            proc_cmd_processed_p = false;
-            from_proc_cmd_buffer(0, pc);
-        }
-    } else {
+
+    if ((pc.busop == WRITE) || forward_cmd_p) {
+        NOTE_ARGS(("Node %d: ADDED TO BUFFER 1", node))
         from_proc_cmd_buffer(1, pc);
+    } else {
+        NOTE_ARGS(("Node %d: ADDED TO BUFFER 0", node))
+        proc_cmd_processed_p = false;
+        from_proc_cmd_buffer(0, pc);
     }
     return true;
 }
@@ -403,7 +400,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
 
                 } else if (dir[lcl].state == DIR_OWNED) {
                     // owned: copy the data into memory and change directory state to be Invalid
-                    if ((dir[lcl].shared_nodes >> node) & 0x1 == 0) {
+                    if (((dir[lcl].shared_nodes >> node) & 0x1) == 0) {
                         ERROR_ARGS(("Non-sharer write-back: owner %d, node %d\n", dir[lcl].owner, node));
                     }
                     copy_cache_line(mem[lcl], pc.data);
@@ -435,7 +432,6 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                 // WRBACK queue is full
                 to_net_buffer(WRBACK, net_cmd);
             }
-            proc_cmd_buffer[1].valid = 0; // clear proc_cmd
 
         } else {
             bool enqueue_status = net->to_net(node, REQUEST, net_cmd);
@@ -444,7 +440,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                 to_net_buffer(REQUEST, net_cmd);
             }
         }
-
+        proc_cmd_buffer[1].valid = 0;
         // no cache reply
     }
 }
@@ -586,7 +582,8 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                             dir[lcl].state = DIR_SHARED;
                             dir[lcl].shared_nodes |= (1 << src);
 
-                            copy_cache_line(pc.data, forward_net_cmd.data);
+                            copy_cache_line(pc.data, proc_cmd_buffer[1].proc_cmd.data);
+                            proc_cmd_buffer[1].valid = 0;
                             pc.permit_tag = SHARED;
                             pc.busop = WRITE;
                             net_cmd.proc_cmd = pc;
@@ -753,7 +750,8 @@ bool iu_t::process_net_request(net_cmd_t net_cmd) {
                                 dir[lcl].owner = src;
                                 dir[lcl].shared_nodes = (1 << src);
 
-                                copy_cache_line(pc.data, forward_net_cmd.data);
+                                copy_cache_line(pc.data, proc_cmd_buffer[1].proc_cmd.data);
+                                proc_cmd_buffer[1].valid = 0;
                                 net_cmd.proc_cmd = pc;
 
                                 net_cmd.dest = src; // reply to the requestor with data
@@ -869,7 +867,8 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         net_cmd.valid_p = 1;
 
-                        copy_cache_line(pc.data, forward_net_cmd.data);
+                        copy_cache_line(pc.data, proc_cmd_buffer[1].proc_cmd.data);
+                        proc_cmd_buffer[1].valid = 0;
                         pc.permit_tag = SHARED;
                         pc.busop = READ;
                         net_cmd.proc_cmd = pc;
@@ -883,7 +882,7 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
                             to_net_buffer(REPLY, net_cmd);
                         }
 
-                        if (forward_net_cmd.permit_tag == MODIFIED || forward_net_cmd.permit_tag == EXCLUSIVE) {
+                        if (proc_cmd_buffer[1].proc_cmd.permit_tag == MODIFIED || proc_cmd_buffer[1].proc_cmd.permit_tag == EXCLUSIVE) {
                             // reply to the dir with data
                             // if dir is not the requestor
                             // TODO: ???
@@ -918,7 +917,8 @@ bool iu_t::process_net_forward(net_cmd_t net_cmd) {
 
                         net_cmd.valid_p = 1;
 
-                        copy_cache_line(pc.data, forward_net_cmd.data);
+                        copy_cache_line(pc.data, proc_cmd_buffer[1].proc_cmd.data);
+                        proc_cmd_buffer[1].valid = 0;
                         pc.permit_tag = MODIFIED;
                         pc.busop = WRITE;
                         net_cmd.proc_cmd = pc;
@@ -1184,10 +1184,6 @@ void iu_t::to_net_buffer(pri_t pri, net_cmd_t net_cmd) {
 }
 
 void iu_t::from_proc_cmd_buffer(bool id, proc_cmd_t proc_cmd) {
-    if (proc_cmd_buffer[id].valid) {
-        ERROR("proc_cmd_buffer: pending request got overwritten");
-        return;
-    }    
     NOTE_ARGS(("Node %d, buffered a proc cmd with bus op %d to buffer %d", node, proc_cmd.busop, id));
 
     proc_cmd_buffer[id].proc_cmd = proc_cmd;
@@ -1198,9 +1194,12 @@ bool iu_t::proc_cmd_buffer_p() {
     if (proc_cmd_buffer[0].valid) {
         if (!proc_cmd_processed_p)      { NOTE_ARGS(("Node %d, buffer 0 got processed", node));}
         return !proc_cmd_processed_p;
+    } else if (proc_cmd_buffer[1].valid) {
+        proc_cmd_buffer[1].valid = false;
+        NOTE_ARGS(("Node %d, buffer 1 got processed", node));
+        return true;
     } else {
-        if (proc_cmd_buffer[1].valid)   { NOTE_ARGS(("Node %d, buffer 1 got processed", node));}
-        return proc_cmd_buffer[1].valid;
+        return false;
     }
 }
 

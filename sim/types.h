@@ -19,6 +19,7 @@ const int NETWORK_LATENCY = 10;
 
 const int SIZE_INV_QUEUE = 32;
 const int SIZE_IU_TO_NET_BUFFER = 2;
+const int SIZE_PROC_TO_IU_BUFFER = 2;
 
 typedef unsigned int uint;
 
