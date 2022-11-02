@@ -431,6 +431,7 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
             if (!enqueue_status) {
                 // WRBACK queue is full
                 to_net_buffer(WRBACK, net_cmd);
+                proc_cmd_buffer[1].valid = 0;
             }
 
         } else {
@@ -440,7 +441,6 @@ bool iu_t::process_proc_request(proc_cmd_t pc) {
                 to_net_buffer(REQUEST, net_cmd);
             }
         }
-        proc_cmd_buffer[1].valid = 0;
         // no cache reply
     }
 }
