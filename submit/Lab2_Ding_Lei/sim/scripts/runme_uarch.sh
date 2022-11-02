@@ -28,15 +28,16 @@ then
     TEST_END=33
 fi
 
-make clean
-make uarch
+(cd ../ && make clean)
+(cd ../ && make uarch)
+(cd ../ && cp sim scripts/sim_uarch)
 
 CUR_TEST=$TEST_START
 NUM_TESTS=0
 
 while [ $CUR_TEST -le $TEST_END ]
 do
-    ./sim $NUM_NODES $NUM_CYCLE $CUR_TEST 0
+    ./sim_uarch $NUM_NODES $NUM_CYCLE $CUR_TEST 0
     retVal=$?
     if [ $retVal -eq 1 ]; then
         echo "Error at case" $CUR_TEST

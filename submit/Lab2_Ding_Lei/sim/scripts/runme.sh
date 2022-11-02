@@ -28,8 +28,9 @@ then
     TEST_END=26
 fi
 
-make clean
-make sim
+(cd ../ && make clean)
+(cd ../ && make sim)
+(cd ../ && cp sim scripts/.)
 
 CUR_TEST=$TEST_START
 NUM_TESTS=0
