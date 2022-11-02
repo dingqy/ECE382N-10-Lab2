@@ -43,7 +43,7 @@ void init_test() {
             break;
         case 3:
             test_args[0].test_cases.emplace_back(0, test_case_t{TEST_WRITE, 0x00000101, 0x100});
-            test_args[1].test_cases.emplace_back(0, test_case_t{TEST_READ, 0x00000101, 0x0});
+            test_args[1].test_cases.emplace_back(21, test_case_t{TEST_READ, 0x00000101, 0x0});
             test_args[1].test_goldens.emplace_back(0, test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x100, 0x0, 0x0});
             break;
         case 4:
@@ -59,8 +59,6 @@ void init_test() {
 
             test_args[0].test_cases.emplace_back(42, test_case_t{TEST_READ, 0x00000101, 0x0});
             test_args[0].test_goldens.emplace_back(42, test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
-
-            test_args[2].test_cases.emplace_back(53, test_case_t{TEST_READ, 0x00000101, 0x0});
             test_args[2].test_goldens.emplace_back(53, test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
             break;
         case 6:
@@ -69,6 +67,17 @@ void init_test() {
             test_args[0].test_cases.emplace_back(4, test_case_t{TEST_READ, 0x00004001, 0x0});
             test_args[0].test_cases.emplace_back(6, test_case_t{TEST_READ, 0x00006001, 0x0});
             test_args[0].test_cases.emplace_back(8, test_case_t{TEST_READ, 0x00008001, 0x0});
+
+            test_args[0].test_goldens.emplace_back(10,
+                                                   test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x0, 0x0, 0x0});
+            test_args[0].test_goldens.emplace_back(10,
+                                                   test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x0, 0x0, 0x0});
+            test_args[0].test_goldens.emplace_back(10,
+                                                   test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x0, 0x0, 0x0});
+            test_args[0].test_goldens.emplace_back(10,
+                                                   test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x0, 0x0, 0x0});
+
+
             test_args[0].test_cases.emplace_back(10, test_case_t{TEST_READ, 0x00000001, 0x0});
             test_args[0].test_goldens.emplace_back(10,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x100, 0x0, 0x0});
@@ -79,6 +88,16 @@ void init_test() {
             test_args[0].test_cases.emplace_back(32, test_case_t{TEST_READ, 0x00004001, 0x0});
             test_args[0].test_cases.emplace_back(34, test_case_t{TEST_READ, 0x00006001, 0x0});
             test_args[0].test_cases.emplace_back(36, test_case_t{TEST_READ, 0x00008001, 0x0});
+
+            test_args[0].test_goldens.emplace_back(10,
+                                                   test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x0, 0x0, 0x0});
+            test_args[0].test_goldens.emplace_back(10,
+                                                   test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x0, 0x0, 0x0});
+            test_args[0].test_goldens.emplace_back(10,
+                                                   test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x0, 0x0, 0x0});
+            test_args[0].test_goldens.emplace_back(10,
+                                                   test_result_t{INVALID, DIR_INVALID, 0x00000001, 0x0, 0x0, 0x0});
+
             test_args[1].test_cases.emplace_back(50, test_case_t{TEST_READ, 0x00000001, 0x0});
             test_args[1].test_goldens.emplace_back(50,
                                                    test_result_t{INVALID, DIR_INVALID, 0x00000101, 0x100, 0x0, 0x0});
