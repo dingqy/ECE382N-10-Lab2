@@ -18,7 +18,7 @@
 #include "generic_error.h"
 #include "cache.h"
 #include "proc.h"
-#include "test.h"
+#include "test_submission.h"
 #include "helpers.h"
 
 /**
@@ -169,13 +169,6 @@ void proc_t::bind(cache_t *c) {
 void proc_t::advance_one_cycle() {
     int data;
 
-    if (init_valid) {
-        for (auto &i: test_args[proc].test_inits) {
-            cache->set_mem(i.address, i.data);
-        }
-        init_valid = false;
-    }
-
     test_args_t test_set = test_args[proc];
 
     // TODO: ADD test behavior here
@@ -223,9 +216,8 @@ void proc_t::advance_one_cycle() {
                         response = cache->load(test_set.test_cases[case_index].second.address, 0, &data,
                                                response.retry_p);
                         if (!response.retry_p) {
-                            test_args[proc].test_results.emplace_back(cur_cycle, test_result_t{INVALID, DIR_INVALID,
-                                                                                        test_set.test_cases[case_index].second.address,
-                                                                                        data, 0x0, 0x0});
+                            test_args[proc].test_results.emplace_back(cur_cycle, test_result_t{
+                                    test_set.test_cases[case_index].second.address, data});
                         }
                     }
                     if (!response.retry_p) {
@@ -239,7 +231,8 @@ void proc_t::advance_one_cycle() {
                 std::uniform_int_distribution<int> distribution{0, test_args[proc].addr_range};
                 addr = distribution(test_args[proc].random_generator);
                 ld_p = ((random() % 2) == 0);
-                std::cout << "Cycle: " << cur_cycle << ", Node: " << proc << ", Address: " << addr << ", Load: " << ld_p << std::endl;
+                std::cout << "Cycle: " << cur_cycle << ", Node: " << proc << ", Address: " << addr << ", Load: " << ld_p
+                          << std::endl;
             }
             if (ld_p) response = cache->load(addr, 0, &data, response.retry_p);
             else response = cache->store(addr, 0, cur_cycle, response.retry_p);
